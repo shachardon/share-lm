@@ -1,0 +1,32 @@
+
+
+/* Define the custom button styles */
+.disable-sharing-button {
+    font-family: Source Sans Pro,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,
+    Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    border-radius: 0.5rem;
+    border-width: 1px;
+    cursor: pointer;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    user-select: none;
+    white-space: nowrap;
+    border-color: rgba(229, 231, 235, var(--tw-border-opacity));
+    color: rgba(31, 41, 55, var(--tw-text-opacity));
+    background-image: linear-gradient(to bottom, var(--tw-gradient-stops));
+    text-align: center;
+    /*box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); !* Subtle box shadow for a lifted appearance *!*/
+    /*color: rgba(31, 41, 55, var(--tw-text-opacity));*/
+    /*--tw-text-opacity: 1;*/
+}
+
+/* Add hover effect */
+.disable-sharing-button:hover:enabled {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15); /* Slightly larger shadow on hover for an interactive effect */
+}
+
+/* Add any other custom styles or overrides as needed */
