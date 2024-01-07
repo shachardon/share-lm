@@ -80,3 +80,79 @@ function updateSharingStatus(tabId) {
             console.log("response", response);
         });
     });}
+
+function handleLocalDbIds() {
+    console.log("handleLocalDbIds");
+    // load local_db_ids from storage
+    let local_db_ids = [];
+    getFromStorage("local_db_ids").then((local_db_ids_from_storage) => {
+        if (local_db_ids !== null) {
+            local_db_ids = local_db_ids_from_storage;
+        }
+    });
+    // handle local_db_ids updates requests
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+        if (request.type === "update_local_db_ids") {
+            console.log("update_local_db_ids");
+            if (request.id_to_add) {
+                local_db_ids.push(request.id_to_add);
+                saveToStorage("local_db_ids", local_db_ids);
+                sendResponse({ local_db_ids: local_db_ids });
+            }
+            if (request.id_to_remove) {
+                const index = local_db_ids.indexOf(request.id_to_remove);
+                if (index > -1) { // only splice array when item is found
+                    local_db_ids.splice(index, 1); // 2nd parameter means remove one item only
+                }
+                saveToStorage("local_db_ids", local_db_ids);
+                sendResponse({ local_db_ids: local_db_ids });
+            }
+        }
+    });
+}
+
+
+const toPromise = (callback) => {
+    const promise = new Promise((resolve, reject) => {
+        try {
+            callback(resolve, reject);
+        }
+        catch (err) {
+            reject(err);
+        }
+    });
+    return promise;
+}
+
+function saveToStorage(field, value) {
+    const dataToSave = {};
+    dataToSave[field] = value; // Construct the object with the dynamic key.
+
+    chrome.storage.local.set(dataToSave, function () {
+        if (chrome.runtime.lastError) {
+            console.error(chrome.runtime.lastError);
+        } else {
+            console.log(field, " saved");
+        }
+    });
+}
+
+
+function getFromStorage(field) {
+    const promise = toPromise((resolve, reject) => {
+        chrome.storage.local.get([field], (result) => {
+            if (chrome.runtime.lastError)
+                reject(chrome.runtime.lastError);
+
+            if (result[field]) {
+                resolve(result[field]);
+                console.log("got ", field, " from storage")
+            } else {
+                resolve(null);
+            }
+        });
+    });
+    return promise;
+}
+
+handleLocalDbIds();

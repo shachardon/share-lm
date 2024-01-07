@@ -85,9 +85,9 @@ function init() {
 
   });
 
-  // Set an interval to run the function once in 24 hours (in milliseconds)
-  const oneHourInMillis = 60 * 60 * 1000 * 24;
-  setInterval(removeInvalidAndPostToDb, oneHourInMillis);
+  // Set an interval to run the function once in 10 min (in milliseconds)
+  const MinInMillis = 60 * 1000;
+  setInterval(removeInvalidAndPostToDb, MinInMillis);
 
 
 
@@ -95,6 +95,7 @@ function init() {
 
   // Get user info from storage or init
   function getUserInfoFromStorage() {
+    console.log("getting user info from storage...");
 
     getFromStorage("user_id").then((user_id_from_storage) => {
       console.log("user_id_from_storage:", user_id_from_storage);
@@ -552,8 +553,11 @@ function init() {
       console.log("saving conversation to local storage...");
       if (cur_conversation_id === 0) {
           cur_conversation_id = uuidv4();
-          local_db_ids.push(cur_conversation_id);
-          saveToStorage("local_db_ids", local_db_ids);
+          // ask background to add the conversation id to local_db_ids
+        console.log("Asking background to add conversation to local_db_ids");
+          chrome.runtime.sendMessage({type: "update_local_db_ids", id_to_add: cur_conversation_id}, function (response) {
+              console.log(response);
+          });
       }
       const data_short = {
           bot_msgs: cur_bot_msgs,
@@ -650,50 +654,51 @@ function init() {
     console.log("removeInvalidAndPostToDb()");
     const currentTime = new Date();
 
-    console.log("iterating over local_db_ids", local_db_ids);
-    // Iterate over conversation IDs
-    local_db_ids.forEach(async (conversationId) => {
-      // Retrieve the conversation object from storage
-      getFromStorage(conversationId).then((conversation) => {
-        if (conversation === null) {
-          console.log("conversation is null");
-          const index = local_db_ids.indexOf(conversationId);
-          if (index > -1) { // only splice array when item is found
-            local_db_ids.splice(index, 1); // 2nd parameter means remove one item only
-          }
-        } else {
-          console.log("conversation:", conversation);
-          if (!checkInterval || isTimestampOlderThanXHours(conversation.timestamp, currentTime, 8)) {
-            // Post to the DB
-            sendConversation(conversationId, conversation);
-            // Remove from storage
-            const index = local_db_ids.indexOf(conversationId);
-            if (index > -1) { // only splice array when item is found
-              local_db_ids.splice(index, 1); // 2nd parameter means remove one item only
-            }
-            chrome.storage.local.remove([conversationId], () => {
-              if (chrome.runtime.lastError) {
-                console.error("Error removing conversation from storage", chrome.runtime.lastError);
-              } else {
-                console.log("conversation removed from storage");
-              }
+    // Iterate over conversation IDs. Get local_db_ids from storage
+    getFromStorage("local_db_ids").then((local_db_from_storage) => {
+      local_db_ids = local_db_from_storage ?? local_db_ids;
+      console.log("iterating over local_db_ids", local_db_ids);
+      local_db_ids.forEach(async (conversationId) => {
+        // Retrieve the conversation object from storage
+        getFromStorage(conversationId).then((conversation) => {
+          if (conversation === null) {
+            console.log("conversation is null");
+            console.log("Asking background to remove conversation from local_db_ids");
+            chrome.runtime.sendMessage({type: "update_local_db_ids", id_to_remove: conversationId}, function (response) {
+              console.log(response);
             });
+          } else {
+            console.log("conversation:", conversation);
+            if (!checkInterval || isTimestampOlderThanXHours(conversation.timestamp, currentTime, 24)) {
+              // Post to the DB
+              console.log("posting conversation to DB");
+              sendConversation(conversationId, conversation);
+              // ask the background script to remove the conversation from local_db_ids
+              console.log("Asking background to remove conversation from local_db_ids");
+              chrome.runtime.sendMessage({type: "update_local_db_ids", id_to_remove: conversationId}, function (response) {
+                console.log(response);
+              });
+              // Remove conversation from storage
+              chrome.storage.local.remove([conversationId], () => {
+                if (chrome.runtime.lastError) {
+                  console.error("Error removing conversation from storage", chrome.runtime.lastError);
+                } else {
+                  console.log("conversation removed from storage");
+                }
+              });
+            }
           }
-        }
+        });
       });
     });
-    saveToStorage("local_db_ids", local_db_ids);
-
-    // Reset the current conversation
-    cur_conversation_id = 0;
-    cur_bot_msgs = [];
-    cur_user_msgs = [];
   }
 
 // Function to check if a timestamp is older than one hour
-  function isTimestampOlderThanXHours(timestamp, currentTime, numHours) {
+  function isTimestampOlderThanXHours(timestamp, currentTimeToCheck, numHours) {
     const HoursInMillis = 60 * 60 * 1000 * numHours;
-    return (new Date(currentTime) - new Date(timestamp)) > HoursInMillis;
+    console.log((new Date(currentTimeToCheck) - new Date(timestamp)), HoursInMillis);
+    console.log((new Date(currentTimeToCheck) - new Date(timestamp)) > HoursInMillis);
+    return (new Date(currentTimeToCheck) - new Date(timestamp)) > HoursInMillis;
   }
 }
 
@@ -757,10 +762,10 @@ function uuidv4() {
 }
 
 function saveToStorage(field, value) {
-  const data = {};
-  data[field] = value; // Construct the object with the dynamic key.
+  const dataToSave = {};
+  dataToSave[field] = value; // Construct the object with the dynamic key.
 
-  chrome.storage.local.set(data, function () {
+  chrome.storage.local.set(dataToSave, function () {
     if (chrome.runtime.lastError) {
       console.error(chrome.runtime.lastError);
     } else {
