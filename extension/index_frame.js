@@ -1,8 +1,5 @@
 
 
-const API_URL = "https://share-lm-4e25a5769ac0.herokuapp.com/api/endpoint";
-
-
 // Init function
 function init() {
 
@@ -85,11 +82,6 @@ function init() {
 
   });
 
-  // Set an interval to run the function once in 10 min (in milliseconds)
-  const MinInMillis = 60 * 1000;
-  setInterval(removeInvalidAndPostToDb, MinInMillis);
-
-
 
   // *********************************************** Functions ***********************************************
 
@@ -135,15 +127,15 @@ function init() {
       if (lastConversationId) {
         getFromStorage(lastConversationId).then((conversation) => {
           if (conversation) {
-              cur_conversation_id = lastConversationId;
-              cur_bot_msgs = conversation.bot_msgs;
-              cur_user_msgs = conversation.user_msgs;
+            cur_conversation_id = lastConversationId;
+            cur_bot_msgs = conversation.bot_msgs;
+            cur_user_msgs = conversation.user_msgs;
           }
         });
       } else {
         console.log("no conversations in local storage");
       }
-      removeInvalidAndPostToDb();
+      // removeInvalidAndPostToDb();
     });
   }
 
@@ -159,9 +151,6 @@ function init() {
       } else if (request.type === "user_metadata?") {
         console.log("got metadata request. sending", user_metadata);
         sendResponse({user_metadata: user_metadata});
-      } else if (request.type === "local_db?") {
-        console.log("got local_db request. sending", local_db_ids);
-        sendResponse({local_db_ids: local_db_ids});
       } else if (request.type === "conversation?") {
         getFromStorage(request.conversation_id).then((conversation) => {
           sendResponse({conversation: conversation});
@@ -175,10 +164,12 @@ function init() {
           app.appendChild(floatingBadge);
           console.log("added floating badge");
         }
-      } else if (request.type === "publish") {
-        console.log("publish clicked");
-        removeInvalidAndPostToDb(false);
-        sendResponse({local_db_ids: local_db_ids});
+      // } else if (request.type === "publish") {
+      //   console.log("publish clicked");
+      //   chrome.runtime.sendMessage({type: "publish"}, function (response) {
+      //       console.log("response from publish request", response);
+      //   });
+      //   sendResponse({msg: "got publish request"});
       } else if (request.type === "gradio?") {
         console.log("gradio? request");
         if (app) {
@@ -342,7 +333,7 @@ function init() {
     });
 
     // Enable the submit button if the checkbox is checked, otherwise disable it
-    ageVerificationCheckbox.addEventListener('change', function() {
+    ageVerificationCheckbox.addEventListener('change', function () {
       submitTermsButton.disabled = !ageVerificationCheckbox.checked;
     });
 
@@ -372,7 +363,7 @@ function init() {
     container.style.width = "100%";
     container.style.textAlign = "center";
     container.style.fontFamily = "Source Sans Pro,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI," +
-      "Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji"; // Fallback fonts included
+        "Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji"; // Fallback fonts included
     container.textContent = 'To activate the ShareLM plugin, please verify the terms of use.';
 
     // Create the floating badge
@@ -496,7 +487,7 @@ function init() {
   }
 
 // Function to check if the conversation has changed
-  function checkConversationStatus(new_bot_msgs,  new_user_msgs) {
+  function checkConversationStatus(new_bot_msgs, new_user_msgs) {
     console.log("checking conversation...");
     let new_conversation = false;
     let need_update = false;
@@ -518,8 +509,8 @@ function init() {
       for (let i = 0; i < cur_bot_msgs.length; i++) {
         if (cur_bot_msgs[i] !== new_bot_msgs[i]) {
           need_update = true;
-          if (i < cur_bot_msgs.length - 1) { // if this is only the last message that changed, it's not a new conversation
-              new_conversation = true;
+          if (i < cur_bot_msgs.length - 1 || cur_user_msgs[i] !== new_user_msgs[i]) { // if this is only the last message that changed, it's not a new conversation
+            new_conversation = true;
           }
           break;
         }
@@ -530,7 +521,7 @@ function init() {
   }
 
   // Function to handle the newly received messages
-  function checkInConversation(new_bot_msgs,  new_user_msgs) {
+  function checkInConversation(new_bot_msgs, new_user_msgs) {
     let [new_conversation, need_update] = checkConversationStatus(new_bot_msgs, new_user_msgs);
 
     if (new_conversation) {
@@ -548,72 +539,31 @@ function init() {
     }
   }
 
-    // Function to save the conversation to local storage
+  // Function to save the conversation to local storage
   function saveCurConversationToLocalStorage() {
-      console.log("saving conversation to local storage...");
-      if (cur_conversation_id === 0) {
-          cur_conversation_id = uuidv4();
-          // ask background to add the conversation id to local_db_ids
-        console.log("Asking background to add conversation to local_db_ids");
-          chrome.runtime.sendMessage({type: "update_local_db_ids", id_to_add: cur_conversation_id}, function (response) {
-              console.log(response);
-          });
-      }
-      const data_short = {
-          bot_msgs: cur_bot_msgs,
-          user_msgs: cur_user_msgs,
-          page_url: window.location.href,
-          timestamp: new Date().toJSON(),
-      };
-      console.log("data_short:", data_short);
-      saveToStorage(cur_conversation_id, data_short);
-  }
+    console.log("saving conversation to local storage...");
+    if (cur_conversation_id === 0) {
+      cur_conversation_id = uuidv4();
+    }
+    const data_short = {
+      bot_msgs: cur_bot_msgs,
+      user_msgs: cur_user_msgs,
+      page_url: window.location.href,
+      timestamp: new Date().toJSON(),
+    };
+    console.log("data_short:", data_short);
 
-    // Function to send the conversation to the server
-  function sendConversation(conversation_id, data_short) {
-    console.log("sending conversation to server...")
-
-    let conversation_metadata = {}
-    getFromStorage("rate_" + conversation_id).then((rate) => {
-      if (rate !== null) {
-        conversation_metadata["rate"] = rate;
-      }
-
-      const data = {
-        conversation_id: conversation_id,
-        bot_msgs: data_short.bot_msgs,
-        user_msgs: data_short.user_msgs,
-        page_url: data_short.page_url,
-        user_id: user_id,
-        user_metadata: user_metadata,
-        timestamp: data_short.timestamp,
-        conversation_metadata: conversation_metadata,
-      };
-      console.log("data:", data);
-      fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      })
-          .then((response) => {
-            if (!response.ok) {
-              throw new Error("Network response was not ok");
-            }
-            console.log("response", response);
-            return response.json();
-          })
-          .then((data) => {
-            console.log("data", data);
-            // conversation_id = data.conversation_id;
-          })
-          .catch((error) => {
-            console.error("Error:", error);
-          });
+    // ask background to add the conversation
+    console.log("Asking background to add conversation");
+    chrome.runtime.sendMessage({
+      type: "update_local_db_ids",
+      id_to_add: cur_conversation_id,
+      conversation: data_short
+    }, function (response) {
+      console.log(response);
     });
-
   }
+
 
   // Function to update the conversation
   function queryAndUpdateConversationsGradio() {
@@ -621,8 +571,20 @@ function init() {
   }
 
   function queryAndUpdateConversationsChatUI() {
-    queryAndUpdateConversations("[class=\"max-w-full whitespace-break-spaces break-words rounded-2xl px-5 py-3.5 text-gray-500 dark:text-gray-400\"]",
-        "[class=\"prose max-w-none dark:prose-invert max-sm:prose-sm prose-headings:font-semibold prose-h1:text-lg prose-h2:text-base prose-h3:text-base prose-pre:bg-gray-800 dark:prose-pre:bg-gray-900\"]");
+    const org_chat_ui_user_selector = "[class=\"max-w-full whitespace-break-spaces break-words rounded-2xl px-5 py-3.5 text-gray-500 dark:text-gray-400\"]";
+    waitForElms(org_chat_ui_user_selector).then((elements_found) => {
+      if (!elements_found || elements_found.length === 0) {
+        console.log("Couldn't find the user messages. Trying the new selector")
+        // try the new selector
+        // queryAndUpdateConversations('.scrollbar-custom.mr-1.h-full.overflow-y-auto .text-gray-500',
+        //     '.scrollbar-custom.mr-1.h-full.overflow-y-auto .text-gray-600');
+      queryAndUpdateConversations("[class=\"disabled w-full appearance-none whitespace-break-spaces text-wrap break-words bg-inherit px-5 py-3.5 text-gray-500 dark:text-gray-400\"]",
+          "[class=\"prose max-w-none max-sm:prose-sm dark:prose-invert prose-headings:font-semibold prose-h1:text-lg prose-h2:text-base prose-h3:text-base prose-pre:bg-gray-800 dark:prose-pre:bg-gray-900\"]");
+      } else {
+        queryAndUpdateConversations(org_chat_ui_user_selector,
+            "[class=\"prose max-w-none dark:prose-invert max-sm:prose-sm prose-headings:font-semibold prose-h1:text-lg prose-h2:text-base prose-h3:text-base prose-pre:bg-gray-800 dark:prose-pre:bg-gray-900\"]");
+      }
+    });
   }
 
   function queryAndUpdateConversations(user_selector, bot_selector) {
@@ -648,57 +610,6 @@ function init() {
       });
 
     });
-  }
-
-  function removeInvalidAndPostToDb(checkInterval = true) {
-    console.log("removeInvalidAndPostToDb()");
-    const currentTime = new Date();
-
-    // Iterate over conversation IDs. Get local_db_ids from storage
-    getFromStorage("local_db_ids").then((local_db_from_storage) => {
-      local_db_ids = local_db_from_storage ?? local_db_ids;
-      console.log("iterating over local_db_ids", local_db_ids);
-      local_db_ids.forEach(async (conversationId) => {
-        // Retrieve the conversation object from storage
-        getFromStorage(conversationId).then((conversation) => {
-          if (conversation === null) {
-            console.log("conversation is null");
-            console.log("Asking background to remove conversation from local_db_ids");
-            chrome.runtime.sendMessage({type: "update_local_db_ids", id_to_remove: conversationId}, function (response) {
-              console.log(response);
-            });
-          } else {
-            console.log("conversation:", conversation);
-            if (!checkInterval || isTimestampOlderThanXHours(conversation.timestamp, currentTime, 24)) {
-              // Post to the DB
-              console.log("posting conversation to DB");
-              sendConversation(conversationId, conversation);
-              // ask the background script to remove the conversation from local_db_ids
-              console.log("Asking background to remove conversation from local_db_ids");
-              chrome.runtime.sendMessage({type: "update_local_db_ids", id_to_remove: conversationId}, function (response) {
-                console.log(response);
-              });
-              // Remove conversation from storage
-              chrome.storage.local.remove([conversationId], () => {
-                if (chrome.runtime.lastError) {
-                  console.error("Error removing conversation from storage", chrome.runtime.lastError);
-                } else {
-                  console.log("conversation removed from storage");
-                }
-              });
-            }
-          }
-        });
-      });
-    });
-  }
-
-// Function to check if a timestamp is older than one hour
-  function isTimestampOlderThanXHours(timestamp, currentTimeToCheck, numHours) {
-    const HoursInMillis = 60 * 60 * 1000 * numHours;
-    console.log((new Date(currentTimeToCheck) - new Date(timestamp)), HoursInMillis);
-    console.log((new Date(currentTimeToCheck) - new Date(timestamp)) > HoursInMillis);
-    return (new Date(currentTimeToCheck) - new Date(timestamp)) > HoursInMillis;
   }
 }
 

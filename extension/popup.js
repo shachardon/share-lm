@@ -25,6 +25,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
   chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
     chrome.tabs.sendMessage(tabs[0].id, { type: 'gradio?' }, function(response) {
+      if (chrome.runtime.lastError) {
+        // console.log("error sending gradio? message to content script");
+      }
       if (response && response.gradio) {
         getUserStateAndShow();
       } else {
@@ -136,7 +139,11 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       const user_metadata = {"age": age, "gender": gender, "location": location};
       chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
-        chrome.tabs.sendMessage(tabs[0].id, {type: 'userDataUpdate', user_metadata: user_metadata});
+        chrome.tabs.sendMessage(tabs[0].id, {type: 'userDataUpdate', user_metadata: user_metadata}, function (response) {
+            if (chrome.runtime.lastError) {
+                // console.log("error sending userDataUpdate message to content script");
+            }
+        });
       });
       console.log("user metadata updated", user_metadata);
       demographicForm.classList.add("hidden"); // Hide the form
@@ -168,20 +175,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const termsOfUseButton = document.getElementById("terms-of-use-button");
     termsOfUseButton.addEventListener("click", function () {
       chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
-        chrome.tabs.sendMessage(tabs[0].id, {type: 'termsOfUse'});
+        chrome.tabs.sendMessage(tabs[0].id, {type: 'termsOfUse'}, function (response) {
+            if (chrome.runtime.lastError) {
+                // console.log("error sending termsOfUse message to content script");
+            }
+        });
       });
     });
   }
 
   function buildConversationsTable() {
     let local_db_ids = [];
-    // chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
-    //   chrome.tabs.sendMessage(tabs[0].id, {type: "local_db?"}, function (response) {
-    //     console.log("asking for local_db");
-    //     if (response && response.local_db_ids) {
-    //       local_db_ids = response.local_db_ids;
-    //       console.log("local_db received from content.js:", response.local_db_ids);
-    //     }
     getFromStorage("local_db_ids").then((local_db_from_storage) => {
       console.log("local_db_from_storage:", local_db_from_storage);
       local_db_ids = local_db_from_storage ?? [];
@@ -256,9 +260,9 @@ document.addEventListener('DOMContentLoaded', function() {
                       thumbupButton.style.background = "none";
                       chrome.storage.local.remove(["rate_" + conversation_id], () => {
                         if (chrome.runtime.lastError) {
-                          console.error("Error removing conversation from storage", chrome.runtime.lastError);
+                          console.error("Error removing rate_conversation from storage", chrome.runtime.lastError);
                         } else {
-                          console.log("conversation removed from storage");
+                          console.log("rate_conversation removed from storage");
                         }
                       });
                     } else {
@@ -357,7 +361,11 @@ document.addEventListener('DOMContentLoaded', function() {
     publishButton.addEventListener("click", function () {
       console.log("publishing...");
       chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
-        chrome.tabs.sendMessage(tabs[0].id, {type: 'publish'});
+        chrome.runtime.sendMessage({type: 'publish'}, function (response) {
+            if (chrome.runtime.lastError) {
+                // console.log("error sending publish message to content script");
+            }
+        });
       });
       const tableBody = document.querySelector("#saved-conversations-table tbody");
       while (tableBody.firstChild) {
@@ -449,24 +457,3 @@ function saveToStorage(field, value) {
     }
   });
 }
-
-// function changeIcon(activate) {
-//   let iconPath;
-//   if (activate) {
-//     iconPath = {
-//       "16": "assets/icons/icon16.png",
-//       "32": "assets/icons/icon32.png",
-//       "48": "assets/icons/icon48.png",
-//       "128": "assets/icons/icon128.png"
-//     };
-//   } else {
-//     iconPath = {
-//       "16": "assets/icons/icon16_non_active.png",
-//       "32": "assets/icons/icon32_non_active.png",
-//       "48": "assets/icons/icon48.png",
-//       "128": "assets/icons/icon128.png"
-//     };
-//   }
-//
-//   chrome.action.setIcon({ path: iconPath });
-// }

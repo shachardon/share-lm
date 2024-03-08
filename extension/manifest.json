@@ -1,7 +1,7 @@
 {
   "name": "ShareLM: Share your chat conversations",
   "description": "Easily contribute your human-models conversations, to create an ever-growing dataset for the benefit of the open-source community!",
-  "version": "0.0.0.8",
+  "version": "0.0.1.0",
   "manifest_version": 3,
   "icons": {
     "16": "assets/icons/icon16.png",
