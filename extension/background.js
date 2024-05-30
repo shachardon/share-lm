@@ -138,6 +138,7 @@ function sendConversation(conversation_id, data_short) {
     getFromStorage("rate_" + conversation_id).then((rate) => {
         if (rate !== null) {
             conversation_metadata["rate"] = rate;
+            conversation_metadata["message_ratings"] = data_short.ratings
         }
 
         getFromStorage("user_id").then((user_id_from_storage) => {
