@@ -84,7 +84,7 @@ function handleLocalDbIds() {
         if (request.type === "update_local_db_ids") {
             let local_db_ids = [];
             getFromStorage("local_db_ids").then((local_db_ids_from_storage) => {
-                if (local_db_ids !== null) {
+                if (local_db_ids_from_storage !== null) {
                     local_db_ids = local_db_ids_from_storage;
                     console.log("local_db_ids loaded from storage", local_db_ids);
                 }
@@ -135,10 +135,12 @@ function sendConversation(conversation_id, data_short) {
     console.log("sending conversation to server...")
 
     let conversation_metadata = {}
+    if ("ratings" in data_short) {
+        conversation_metadata["message_ratings"] = data_short.ratings;
+    }
     getFromStorage("rate_" + conversation_id).then((rate) => {
         if (rate !== null) {
             conversation_metadata["rate"] = rate;
-            conversation_metadata["message_ratings"] = data_short.ratings
         }
 
         getFromStorage("user_id").then((user_id_from_storage) => {

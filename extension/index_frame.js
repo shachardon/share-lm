@@ -519,17 +519,12 @@ function init() {
     }
 
     // Check if the ratings have changed
-    if (cur_ratings.length < new_ratings.length) {
+    if (cur_ratings.length !== new_ratings.length) {
       need_update = true;
-      new_conversation = true;
-    } else if (cur_ratings.length > new_ratings.length) {
-      new_conversation = false;
-      need_update = false;
     } else {
       for (let i = 0; i < cur_ratings.length; i++) {
         if (cur_ratings[i] !== new_ratings[i]) {
           need_update = true;
-          new_conversation = true;
           break;
         }
       }
@@ -638,32 +633,35 @@ function init() {
 
 
 function queryAndUpdateRating(n_messages) {
-  const parent_selector = ".absolute.bottom-1.right-0.-mb-4.flex.max-md\\:transition-all.md\\:bottom-0.md\\:group-hover\\:visible.md\\:group-hover\\:opacity-100";
+  const parent_selector = 'div.absolute.bottom-1.right-0';
   const positive_selector = "[title=\"Remove +1\"]";
   const negative_selector = "[title=\"Remove -1\"]";
-  const new_ratings = [];
+  const new_ratings = Array(n_messages).fill(0);
 
   // find all rating elements :+1: and :-1: and store the ratings
   return waitForElms(parent_selector).then((parents) => {
-    for (let i = 0; i < n_messages; i++) {
-
+    if (!parents || parents.length === 0) {
+        console.log("No ratings found"); // Note - we currently don't support ratings in Gradio UI
+        return new_ratings;
+    }
+    for (let i = 0; i < parents.length; i++) {
       const positive_child = parents[i].querySelector(positive_selector);
       const negative_child = parents[i].querySelector(negative_selector);
       
       if (positive_child) {
         console.log("positive rating found");
-        new_ratings.push(1);
+        new_ratings[i] = 1;
       } else if (negative_child) {
         console.log("negative rating found");
-        new_ratings.push(-1);
+        new_ratings[i] = -1;
       } else {
-        new_ratings.push(0);
+        new_ratings[i] = 0;
       }
     }
     return new_ratings;
   }).catch((err) => {
     console.error("Error in queryAndUpdateRating:", err);
-    return Array(n_messages).fill(0);
+    return new_ratings;
   });
 }
 
