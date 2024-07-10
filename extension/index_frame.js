@@ -14,6 +14,7 @@ function init() {
   let cur_conversation_id = 0;
   let cur_bot_msgs = [];
   let cur_user_msgs = [];
+  let cur_ratings = [];
 
 
   let gradio_app;
@@ -486,8 +487,8 @@ function init() {
     });
   }
 
-// Function to check if the conversation has changed
-  function checkConversationStatus(new_bot_msgs, new_user_msgs) {
+  // Function to check if the conversation has changed
+  function checkConversationStatus(new_bot_msgs, new_user_msgs, new_ratings) {
     console.log("checking conversation...");
     let new_conversation = false;
     let need_update = false;
@@ -517,12 +518,24 @@ function init() {
       }
     }
 
+    // Check if the ratings have changed
+    if (cur_ratings.length !== new_ratings.length) {
+      need_update = true;
+    } else {
+      for (let i = 0; i < cur_ratings.length; i++) {
+        if (cur_ratings[i] !== new_ratings[i]) {
+          need_update = true;
+          break;
+        }
+      }
+    }
+
     return [new_conversation, need_update];
   }
 
   // Function to handle the newly received messages
-  function checkInConversation(new_bot_msgs, new_user_msgs) {
-    let [new_conversation, need_update] = checkConversationStatus(new_bot_msgs, new_user_msgs);
+  function checkInConversation(new_bot_msgs, new_user_msgs, new_ratings) {
+    let [new_conversation, need_update] = checkConversationStatus(new_bot_msgs, new_user_msgs, new_ratings);
 
     if (new_conversation) {
       // Do not use old conversation id
@@ -532,6 +545,7 @@ function init() {
       // Update messages
       cur_bot_msgs = new_bot_msgs;
       cur_user_msgs = new_user_msgs;
+      cur_ratings = new_ratings;
       if (new_user_msgs.length > 0) {
         saveCurConversationToLocalStorage();
         // sendConversation();
@@ -548,6 +562,7 @@ function init() {
     const data_short = {
       bot_msgs: cur_bot_msgs,
       user_msgs: cur_user_msgs,
+      ratings: cur_ratings,
       page_url: window.location.href,
       timestamp: new Date().toJSON(),
     };
@@ -605,14 +620,50 @@ function init() {
           new_bot_msgs.push(bot[i].textContent);
         }
 
-        // Check if the conversation has changed, if so, send it to the server
-        checkInConversation(new_bot_msgs, new_user_msgs);
+        // Get the ratings from ChatUI
+        queryAndUpdateRating(new_bot_msgs.length).then((new_ratings) => {
+          // Check if the conversation has changed, if so, send it to the server
+          checkInConversation(new_bot_msgs, new_user_msgs, new_ratings);
+        });
       });
 
     });
   }
 }
 
+
+function queryAndUpdateRating(n_messages) {
+  const parent_selector = 'div.absolute.bottom-1.right-0';
+  const positive_selector = "[title=\"Remove +1\"]";
+  const negative_selector = "[title=\"Remove -1\"]";
+  const new_ratings = Array(n_messages).fill(0);
+
+  // find all rating elements :+1: and :-1: and store the ratings
+  return waitForElms(parent_selector).then((parents) => {
+    if (!parents || parents.length === 0) {
+        console.log("No ratings found"); // Note - we currently don't support ratings in Gradio UI
+        return new_ratings;
+    }
+    for (let i = 0; i < parents.length; i++) {
+      const positive_child = parents[i].querySelector(positive_selector);
+      const negative_child = parents[i].querySelector(negative_selector);
+      
+      if (positive_child) {
+        console.log("positive rating found");
+        new_ratings[i] = 1;
+      } else if (negative_child) {
+        console.log("negative rating found");
+        new_ratings[i] = -1;
+      } else {
+        new_ratings[i] = 0;
+      }
+    }
+    return new_ratings;
+  }).catch((err) => {
+    console.error("Error in queryAndUpdateRating:", err);
+    return new_ratings;
+  });
+}
 
 function waitForElm(selector) {
   return new Promise(resolve => {
