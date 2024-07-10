@@ -90,7 +90,7 @@ function handleLocalDbIds() {
                 }
                 // add new conversation request
                 if (request.id_to_add) {
-                    console.log("add new conversation request");
+                    console.log("add new conversation request", request);
                     const index = local_db_ids.indexOf(request.id_to_add);
                     if (index < 0) { // only add to array if not already there
                         local_db_ids.push(request.id_to_add);

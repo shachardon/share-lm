@@ -140,9 +140,9 @@ document.addEventListener('DOMContentLoaded', function() {
       const user_metadata = {"age": age, "gender": gender, "location": location};
       chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
         chrome.tabs.sendMessage(tabs[0].id, {type: 'userDataUpdate', user_metadata: user_metadata}, function (response) {
-            if (chrome.runtime.lastError) {
-                // console.log("error sending userDataUpdate message to content script");
-            }
+          if (chrome.runtime.lastError) {
+            // console.log("error sending userDataUpdate message to content script");
+          }
         });
       });
       console.log("user metadata updated", user_metadata);
@@ -176,9 +176,9 @@ document.addEventListener('DOMContentLoaded', function() {
     termsOfUseButton.addEventListener("click", function () {
       chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
         chrome.tabs.sendMessage(tabs[0].id, {type: 'termsOfUse'}, function (response) {
-            if (chrome.runtime.lastError) {
-                // console.log("error sending termsOfUse message to content script");
-            }
+          if (chrome.runtime.lastError) {
+            // console.log("error sending termsOfUse message to content script");
+          }
         });
       });
     });
@@ -206,8 +206,28 @@ document.addEventListener('DOMContentLoaded', function() {
                   conversation += "😄: " + conversation_from_storage.user_msgs[i] + "\n";
                   conversation += "🤖: " + conversation_from_storage.bot_msgs[i] + "\n";
                 }
-                // Display only the first 50 characters of the conversation initially
-                const truncatedText = conversation.length > 50 ? conversation.slice(0, 50) + "..." : conversation;
+
+                // Manually break to lines if no spaces are found.
+                let result = '';
+                let lineLength = 0;
+
+                for (let i = 0; i < conversation.length; i++) {
+                  result += conversation[i];
+                  if (conversation[i] === ' ') {
+                    lineLength = 0;
+                  } else {
+                    lineLength += 1;
+                  }
+
+                  if (lineLength >= 25) { // Adjust based on font-size
+                    result += '\n';
+                    lineLength = 0;
+                  }
+                }
+                conversation = result;
+
+                // Display only the first 50 characters of the conversation initially.
+                let truncatedText = conversation.length > 50 ? conversation.slice(0, 50) + "..." : conversation;
 
                 // Create a div to hold the truncated text and "Read More" link
                 const contentDiv = document.createElement("div");
@@ -245,70 +265,70 @@ document.addEventListener('DOMContentLoaded', function() {
                 const cell = row.insertCell(0);
 
                 // Create thumbup and thumbdown buttons
-                  const thumbupButton = document.createElement("button");
-                  thumbupButton.textContent = "👍";
-                  thumbupButton.style.display = "block"; // Make it a block-level element
-                  thumbupButton.style.margin = "0 auto"; // Center horizontally
-                  thumbupButton.style.border = "none"; // Remove the border
-                  thumbupButton.style.background = "none"; // Remove the background color
-                  thumbupButton.style.outline = "none"; // Remove the outline
-                  thumbupButton.style.cursor = "pointer"; // Set a pointer cursor
-                  thumbupButton.style.color = "green"; // Change the color to indicate interactivity
-                  thumbupButton.addEventListener("click", () => {
-                    console.log("thumbup clicked");
-                    if (thumbupButton.style.background === "green") {
-                      thumbupButton.style.background = "none";
-                      chrome.storage.local.remove(["rate_" + conversation_id], () => {
-                        if (chrome.runtime.lastError) {
-                          console.error("Error removing rate_conversation from storage", chrome.runtime.lastError);
-                        } else {
-                          console.log("rate_conversation removed from storage");
-                        }
-                      });
-                    } else {
-                      thumbupButton.style.background = "green";
-                      thumbdownButton.style.background = "none";
-                      saveToStorage("rate_" + conversation_id, "thumbup");
-                    }
-                  });
+                const thumbupButton = document.createElement("button");
+                thumbupButton.textContent = "👍";
+                thumbupButton.style.display = "block"; // Make it a block-level element
+                thumbupButton.style.margin = "0 auto"; // Center horizontally
+                thumbupButton.style.border = "none"; // Remove the border
+                thumbupButton.style.background = "none"; // Remove the background color
+                thumbupButton.style.outline = "none"; // Remove the outline
+                thumbupButton.style.cursor = "pointer"; // Set a pointer cursor
+                thumbupButton.style.color = "green"; // Change the color to indicate interactivity
+                thumbupButton.addEventListener("click", () => {
+                  console.log("thumbup clicked");
+                  if (thumbupButton.style.background === "green") {
+                    thumbupButton.style.background = "none";
+                    chrome.storage.local.remove(["rate_" + conversation_id], () => {
+                      if (chrome.runtime.lastError) {
+                        console.error("Error removing rate_conversation from storage", chrome.runtime.lastError);
+                      } else {
+                        console.log("rate_conversation removed from storage");
+                      }
+                    });
+                  } else {
+                    thumbupButton.style.background = "green";
+                    thumbdownButton.style.background = "none";
+                    saveToStorage("rate_" + conversation_id, "thumbup");
+                  }
+                });
 
-                  const thumbdownButton = document.createElement("button");
-                  thumbdownButton.textContent = "👎";
-                  thumbdownButton.style.display = "block"; // Make it a block-level element
-                  thumbdownButton.style.margin = "0 auto"; // Center horizontally
-                  thumbdownButton.style.border = "none"; // Remove the border
-                  thumbdownButton.style.background = "none"; // Remove the background color
-                  thumbdownButton.style.outline = "none"; // Remove the outline
-                  thumbdownButton.style.cursor = "pointer"; // Set a pointer cursor
-                  thumbdownButton.style.color = "red"; // Change the color to indicate interactivity
-                  thumbdownButton.addEventListener("click", () => {
-                    console.log("thumbdown clicked");
-                    if (thumbdownButton.style.background === "red") {
-                      thumbdownButton.style.background = "none";
-                      chrome.storage.local.remove(["rate_" + conversation_id], () => {
-                        if (chrome.runtime.lastError) {
-                          console.error("Error removing conversation from storage", chrome.runtime.lastError);
-                        } else {
-                          console.log("conversation removed from storage");
-                        }
-                      });
-                    } else {
-                      thumbdownButton.style.background = "red";
-                      thumbupButton.style.background = "none";
-                      saveToStorage("rate_" + conversation_id, "thumbdown");
-                    }
-                  });
+                const thumbdownButton = document.createElement("button");
+                thumbdownButton.textContent = "👎";
+                thumbdownButton.style.display = "block"; // Make it a block-level element
+                thumbdownButton.style.margin = "0 auto"; // Center horizontally
+                thumbdownButton.style.border = "none"; // Remove the border
+                thumbdownButton.style.background = "none"; // Remove the background color
+                thumbdownButton.style.outline = "none"; // Remove the outline
+                thumbdownButton.style.cursor = "pointer"; // Set a pointer cursor
+                thumbdownButton.style.color = "red"; // Change the color to indicate interactivity
+                thumbdownButton.addEventListener("click", () => {
+                  console.log("thumbdown clicked");
+                  if (thumbdownButton.style.background === "red") {
+                    thumbdownButton.style.background = "none";
+                    chrome.storage.local.remove(["rate_" + conversation_id], () => {
+                      if (chrome.runtime.lastError) {
+                        console.error("Error removing conversation from storage", chrome.runtime.lastError);
+                      } else {
+                        console.log("conversation removed from storage");
+                      }
+                    });
+                  } else {
+                    thumbdownButton.style.background = "red";
+                    thumbupButton.style.background = "none";
+                    saveToStorage("rate_" + conversation_id, "thumbdown");
+                  }
+                });
 
                 getFromStorage("rate_" + conversation_id).then(
                     (rate) => {
                       if (rate === null) {
                         console.log("rate not found in storage");
                       } else if (rate === "thumbup") {
-                          thumbupButton.style.background = "green";
+                        thumbupButton.style.background = "green";
                       } else if (rate === "thumbdown") {
-                          thumbdownButton.style.background = "red";
+                        thumbdownButton.style.background = "red";
                       }
-                });
+                    });
 
                 const thumbsCell = row.insertCell(1);
                 thumbsCell.appendChild(thumbupButton);
@@ -351,8 +371,8 @@ document.addEventListener('DOMContentLoaded', function() {
         )
       });
     });
-  // });
-  addPublishButton();
+    // });
+    addPublishButton();
   }
 
   function addPublishButton() {
@@ -362,9 +382,9 @@ document.addEventListener('DOMContentLoaded', function() {
       console.log("publishing...");
       chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
         chrome.runtime.sendMessage({type: 'publish'}, function (response) {
-            if (chrome.runtime.lastError) {
-                // console.log("error sending publish message to content script");
-            }
+          if (chrome.runtime.lastError) {
+            // console.log("error sending publish message to content script");
+          }
         });
       });
       const tableBody = document.querySelector("#saved-conversations-table tbody");
