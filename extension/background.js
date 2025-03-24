@@ -188,6 +188,16 @@ function sendConversation(conversation_id, data_short) {
                         console.error("Error:", error);
                     });
             });
+
+            getFromStorage("messages_counter_from_storage").then((messages_counter_from_storage) => {
+                let updated_messages_counter = 0;
+                if (messages_counter_from_storage) {
+                    updated_messages_counter = messages_counter_from_storage + data_short.user_msgs.length
+                } else { // first message ever!
+                    updated_messages_counter = data_short.user_msgs.length;
+                }
+                saveToStorage("messages_counter_from_storage", updated_messages_counter);
+            });
         });
     });
 }

@@ -39,6 +39,8 @@ document.addEventListener('DOMContentLoaded', function() {
   addCopyButton();
   handleFAQClick();
   buildConversationsTable();
+  addSharedCounter();
+  addDownloadButton();
 
   function handleFAQClick() {
     // Get all FAQ items
@@ -394,6 +396,44 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
+  function addDownloadButton() {
+    // Download button to allow the user to download the locally saved conversations in as a csv file
+    const downloadButton = document.getElementById("downloadButton");
+
+    // Add a click event listener to the button
+    downloadButton.addEventListener("click", () => {
+        // Get the locally saved conversations from storage
+      console.log("downloading...");
+        getFromStorage("local_db_ids").then((local_db_ids) => {
+            if (local_db_ids) {
+              console.log("local_db_ids:", local_db_ids);
+              let csv = "Conversation ID,User Message,Bot Response\n";
+              for (let i = 0; i < local_db_ids.length; i++) {
+                let conversation_id = local_db_ids[i];
+                getFromStorage(conversation_id).then((conversation) => {
+                  if (conversation) {
+                    console.log("conversation:", conversation);
+                    for (let i = 0; i < conversation.bot_msgs.length; i++) {
+                      let line = conversation_id + "," + "\"" + conversation.user_msgs[i].replace(/"/g, '""') + "\"" + ","
+                          + "\"" + conversation.bot_msgs[i].replace(/"/g, '""') + "\"" + "\n";
+                      csv +=  line;
+                    }
+                  }
+                  if (i === local_db_ids.length - 1) {
+                    // Create a temporary anchor element to download the csv file
+                    const tempAnchor = document.createElement("a");
+                    tempAnchor.href = 'data:text/csv;charset=utf-8,' + encodeURI(csv);
+                    tempAnchor.target = '_blank';
+                    tempAnchor.download = 'conversations.csv';
+                    tempAnchor.click();
+                  }
+                });
+              }
+            }
+        });
+    });
+  }
+
   function addCopyButton() {
     // Get the button element by its ID
     const copyButton = document.getElementById("copyButton");
@@ -429,6 +469,17 @@ document.addEventListener('DOMContentLoaded', function() {
             }
           }
       )
+    });
+  }
+
+  function addSharedCounter() {
+    getFromStorage("messages_counter_from_storage").then((counter_from_storage) => {
+      if (counter_from_storage) {
+        console.log("counter_from_storage:", counter_from_storage);
+        const messagesCounter = document.getElementById("already-shared-counter");
+        messagesCounter.innerHTML = `You have shared <br><span id="counter-number">${counter_from_storage}</span><br> chat responses! 💪🤩`;
+        // messagesCounter.textContent = "You have shared\n" + counter_from_storage + " chat responses! 💪🤩";
+      }
     });
   }
 

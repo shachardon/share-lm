@@ -19,8 +19,22 @@ function init() {
 
   let gradio_app;
   let chat_ui_app;
+  let openai_app;
+  let claude_ai_app;
   let app;
   let init_already = false;
+
+  // Add this to see if something is removing your element
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === 'childList' && mutation.removedNodes.length > 0) {
+        console.log('Element removed:', mutation.removedNodes);
+        console.log('Removed by:', mutation.target);
+        console.trace();
+      }
+    });
+  });
+
 
   // Let's find the gradio-app element
   waitForElm("body > gradio-app").then((gradio_app_from_storage) => {
@@ -82,6 +96,69 @@ function init() {
     }
 
   });
+
+  // Let's find the openai-app element
+    waitForElm("body > div.flex.h-full.w-full.flex-col").then((openai_app_from_storage) => {
+      openai_app = openai_app_from_storage;
+
+      if (!openai_app) {
+          console.log("Couldn't find openai-app.")
+      } else {
+          shouldShare = true;
+          app = openai_app;
+          console.log("openai-app found!", openai_app);
+      }
+
+      if (!init_already || openai_app) {
+          init_already = true;
+          getUserInfoFromStorage();
+          handleDataUpdatesFromPopup();
+      }
+
+      if (openai_app) {
+          if (!age_verified) {
+              console.log("age not verified - adding need verification badge");
+              addNeedVerificationBadge();
+          } else {
+              addBadge();
+          }
+          setInterval(queryAndUpdateConversationsOpenAI, 7000);
+          setInterval(addBadge, 50000);
+      }
+    });
+
+    // Let's find the claude-ai element
+    waitForElm("body > div.flex.min-h-screen.w-full").then((claude_ai_app_from_storage) => {
+    // waitForElm("[class=\"from-bg-200 to-bg-100 text-text-100 font-styrene min-h-screen bg-gradient-to-b bg-fixed tracking-tight\"]").then((claude_ai_app_from_storage) => {
+    // waitForElm("[data-theme=\"claude\"]").then((claude_ai_app_from_storage) => {
+
+    claude_ai_app = claude_ai_app_from_storage;
+
+      if (!claude_ai_app) {
+        console.log("Couldn't find claude-ai-app.");
+      } else {
+        shouldShare = true;
+        app = claude_ai_app;
+        console.log("claude-ai-app found!", claude_ai_app);
+      }
+
+      if (!init_already || claude_ai_app) {
+         init_already = true;
+         getUserInfoFromStorage();
+         handleDataUpdatesFromPopup();
+      }
+
+      if (claude_ai_app) {
+        if (!age_verified) {
+          console.log("age not verified - adding need verification badge");
+          addNeedVerificationBadge();
+        } else {
+          addBadge();
+        }
+        setInterval(queryAndUpdateConversationsClaudeAI, 7000);
+      }
+
+    });
 
 
   // *********************************************** Functions ***********************************************
@@ -201,6 +278,8 @@ function init() {
     #floating-badge {
         margin: 0;
         box-sizing: border-box;
+        max-height: 80vh; /* Adjusts to a maximum height of 80% of the viewport height */
+        overflow-y: auto;
     }
     #badge-content p:first-child {
       margin-top: 0 !important;
@@ -365,6 +444,7 @@ function init() {
     container.style.textAlign = "center";
     container.style.fontFamily = "Source Sans Pro,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI," +
         "Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji"; // Fallback fonts included
+    container.style.color = "black";
     container.textContent = 'To activate the ShareLM plugin, please verify the terms of use.';
 
     // Create the floating badge
@@ -405,6 +485,7 @@ function init() {
 
     const badgeContainer = document.getElementById("shareLM-badge");
     if (badgeContainer) {
+      console.log("badge already exists");
       return;
     }
 
@@ -419,12 +500,13 @@ function init() {
         shouldShare = shouldShare_from_storage["shouldShare"];
       }
       container.id = "shareLM-badge";
+      container.style.color = "black";
       container.style.background = "linear-gradient(to right, white,  #Bde8b7, white)";
       container.style.width = "100%";
       container.style.textAlign = "center";
       container.style.fontFamily = "Source Sans Pro,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI," +
           "Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji"; // Fallback fonts included
-      container.textContent = 'Your conversation is shared with the community!  💬';
+      container.textContent = 'Your conversation is shared with the community! 💬';
       let button = document.createElement("button");
       button.id = "disable-sharing-button";
       button.textContent = 'Click here to stop sharing';
@@ -482,8 +564,28 @@ function init() {
       });
 
       container.appendChild(button);
-      app.insertAdjacentElement("beforebegin", container);
-      console.log("inserted badge");
+      if (!document.getElementById("shareLM-badge")) {
+      if (!app.insertAdjacentElement("beforebegin", container)) {
+        console.log("badge failed to add");
+        if (!app.parentNode) {
+          console.log("app has no parent node - insertAdjacentElement won't work");
+          // look again for the app element
+          if (openai_app) {
+            app = document.querySelector("body > div.flex.h-full.w-full.flex-col");
+          } else if (claude_ai_app) {
+            app = document.querySelector("body > div.flex.min-h-screen.w-full");
+          }
+          if (app) {
+            console.log("app found again");
+            if (!document.getElementById("shareLM-badge")) {
+              if (!app.insertAdjacentElement("beforebegin", container)) {
+                console.log("badge failed to add again");
+              }
+            }
+          }
+        }
+      }
+    }
     });
   }
 
@@ -594,7 +696,7 @@ function init() {
         // queryAndUpdateConversations('.scrollbar-custom.mr-1.h-full.overflow-y-auto .text-gray-500',
         //     '.scrollbar-custom.mr-1.h-full.overflow-y-auto .text-gray-600');
       queryAndUpdateConversations("[class=\"disabled w-full appearance-none whitespace-break-spaces text-wrap break-words bg-inherit px-5 py-3.5 text-gray-500 dark:text-gray-400\"]",
-          "[class=\"prose max-w-none max-sm:prose-sm dark:prose-invert prose-headings:font-semibold prose-h1:text-lg prose-h2:text-base prose-h3:text-base prose-pre:bg-gray-800 dark:prose-pre:bg-gray-900\"]");
+          "[class=\"prose max-w-none dark:prose-invert max-sm:prose-sm prose-headings:font-semibold prose-h1:text-lg prose-h2:text-base prose-h3:text-base prose-pre:bg-gray-800 dark:prose-pre:bg-gray-900\"]");
       } else {
         queryAndUpdateConversations(org_chat_ui_user_selector,
             "[class=\"prose max-w-none dark:prose-invert max-sm:prose-sm prose-headings:font-semibold prose-h1:text-lg prose-h2:text-base prose-h3:text-base prose-pre:bg-gray-800 dark:prose-pre:bg-gray-900\"]");
@@ -602,7 +704,19 @@ function init() {
     });
   }
 
-  function queryAndUpdateConversations(user_selector, bot_selector) {
+  function queryAndUpdateConversationsOpenAI() {
+    queryAndUpdateConversations(
+        "[data-message-author-role=\"user\"]",
+        "[data-message-author-role=\"assistant\"]");//,
+  }
+
+  function queryAndUpdateConversationsClaudeAI() {
+    queryAndUpdateConversations("[data-testid=\"user-message\"]",
+        ".font-claude-message");//,
+  }
+
+
+    function queryAndUpdateConversations(user_selector, bot_selector, sub_user_selector, sub_bot_selector) {
     if (!shouldShare || !age_verified) {
       console.log("Sharing is disables, not updating conversation");
       return;
@@ -611,13 +725,32 @@ function init() {
     waitForElms(user_selector).then((user) => {
       const new_user_msgs = [];
       for (let i = 0; i < user.length; i++) {
-        new_user_msgs.push(user[i].textContent);
+        if (sub_user_selector) {
+            const sub_user = user[i].querySelector(sub_user_selector);
+            if (sub_user) {
+              new_user_msgs.push(sub_user.textContent);
+            }
+        } else {
+          new_user_msgs.push(user[i].textContent);
+        }
       }
-
       waitForElms(bot_selector).then((bot) => {
+        console.log("bot messages found");
+        console.log(bot);
         const new_bot_msgs = [];
         for (let i = 0; i < bot.length; i++) {
-          new_bot_msgs.push(bot[i].textContent);
+          if (sub_bot_selector) {
+            const sub_bot = bot[i].querySelectorAll(sub_bot_selector);
+            if (sub_bot) {
+                let sub_bot_concat = "";
+                for (let j = 0; j < sub_bot.length; j++) {
+                    sub_bot_concat += sub_bot[j].textContent;
+                }
+              new_bot_msgs.push(sub_bot.textContent);
+            }
+          } else {
+            new_bot_msgs.push(bot[i].textContent);
+          }
         }
 
         // Get the ratings from ChatUI
@@ -633,7 +766,7 @@ function init() {
 
 
 function queryAndUpdateRating(n_messages) {
-  const parent_selector = 'div.absolute.bottom-1.right-0';
+  const parent_selector = 'div.absolute.-bottom-4.right-0';
   const positive_selector = "[title=\"Remove +1\"]";
   const negative_selector = "[title=\"Remove -1\"]";
   const new_ratings = Array(n_messages).fill(0);
@@ -755,6 +888,6 @@ function getFromStorage(field) {
 }
 
 
+
+
 init();
-
-
