@@ -21,6 +21,7 @@ function init() {
   let chat_ui_app;
   let openai_app;
   let claude_ai_app;
+  let gemini_app;
   let app;
   let init_already = false;
 
@@ -159,6 +160,27 @@ function init() {
       }
 
     });
+
+    if (window.location.href.includes("gemini.google.com")) {
+      console.log("Gemini website detected");
+      gemini_app = document.body;
+      app = gemini_app;
+      shouldShare = true;
+
+      if (!init_already) {
+        init_already = true;
+        getUserInfoFromStorage();
+        handleDataUpdatesFromPopup();
+      }
+
+      if (!age_verified) {
+        console.log("age not verified - adding need verification badge");
+        addNeedVerificationBadge();
+      } else {
+        addBadge();
+      }
+      setInterval(queryAndUpdateConversationsGemini, 7000);
+    }
 
 
   // *********************************************** Functions ***********************************************
@@ -594,40 +616,32 @@ function init() {
     console.log("checking conversation...");
     let new_conversation = false;
     let need_update = false;
-    if (cur_bot_msgs.length < new_bot_msgs.length) {
-      need_update = true;
-      // Verify if the new conversation is a continuation of the previous one
-      for (let i = 0; i < cur_bot_msgs.length; i++) {
-        if (cur_bot_msgs[i] !== new_bot_msgs[i]) {
-          new_conversation = true;
-          break;
-        }
-      }
 
-    } else if (cur_bot_msgs.length > new_bot_msgs.length) {
-      new_conversation = true;
+    // If the number of user messages or bot messages has changed, we need an update.
+    if (cur_bot_msgs.length !== new_bot_msgs.length || cur_user_msgs.length !== new_user_msgs.length) {
       need_update = true;
+      new_conversation = true; // Force a new conversation for every change
     } else {
-      // Same length
+      // Check if the content of the messages has changed
       for (let i = 0; i < cur_bot_msgs.length; i++) {
-        if (cur_bot_msgs[i] !== new_bot_msgs[i]) {
+        if (cur_bot_msgs[i] !== new_bot_msgs[i] || cur_user_msgs[i] !== new_user_msgs[i]) {
           need_update = true;
-          if (i < cur_bot_msgs.length - 1 || cur_user_msgs[i] !== new_user_msgs[i]) { // if this is only the last message that changed, it's not a new conversation
-            new_conversation = true;
-          }
+          new_conversation = true; // Force a new conversation for every change
           break;
         }
       }
     }
 
     // Check if the ratings have changed
-    if (cur_ratings.length !== new_ratings.length) {
-      need_update = true;
-    } else {
-      for (let i = 0; i < cur_ratings.length; i++) {
-        if (cur_ratings[i] !== new_ratings[i]) {
-          need_update = true;
-          break;
+    if (!need_update) {
+      if (cur_ratings.length !== new_ratings.length) {
+        need_update = true;
+      } else {
+        for (let i = 0; i < cur_ratings.length; i++) {
+          if (cur_ratings[i] !== new_ratings[i]) {
+            need_update = true;
+            break;
+          }
         }
       }
     }
@@ -639,11 +653,9 @@ function init() {
   function checkInConversation(new_bot_msgs, new_user_msgs, new_ratings) {
     let [new_conversation, need_update] = checkConversationStatus(new_bot_msgs, new_user_msgs, new_ratings);
 
-    if (new_conversation) {
-      // Do not use old conversation id
-      cur_conversation_id = 0;
-    }
     if (need_update) {
+      // Force a new conversation ID for each message pair
+      cur_conversation_id = 0;
       // Update messages
       cur_bot_msgs = new_bot_msgs;
       cur_user_msgs = new_user_msgs;
@@ -715,52 +727,90 @@ function init() {
         ".font-claude-message");//,
   }
 
+  function queryAndUpdateConversationsGemini() {
+    queryAndUpdateConversations(
+        "div.query-text",
+        "div.markdown-main-panel",
+        null,
+        null,
+        "css"
+    );
+  }
 
-    function queryAndUpdateConversations(user_selector, bot_selector, sub_user_selector, sub_bot_selector) {
+
+    function queryAndUpdateConversations(user_selector, bot_selector, sub_user_selector, sub_bot_selector, strategy = "css") {
     if (!shouldShare || !age_verified) {
-      console.log("Sharing is disables, not updating conversation");
+      console.log("Sharing is disabled, not updating conversation");
       return;
     }
-    // Get the messages
-    waitForElms(user_selector).then((user) => {
-      const new_user_msgs = [];
-      for (let i = 0; i < user.length; i++) {
-        if (sub_user_selector) {
-            const sub_user = user[i].querySelector(sub_user_selector);
-            if (sub_user) {
-              new_user_msgs.push(sub_user.textContent);
-            }
-        } else {
-          new_user_msgs.push(user[i].textContent);
-        }
-      }
-      waitForElms(bot_selector).then((bot) => {
-        console.log("bot messages found");
-        console.log(bot);
-        const new_bot_msgs = [];
-        for (let i = 0; i < bot.length; i++) {
-          if (sub_bot_selector) {
-            const sub_bot = bot[i].querySelectorAll(sub_bot_selector);
-            if (sub_bot) {
-                let sub_bot_concat = "";
-                for (let j = 0; j < sub_bot.length; j++) {
-                    sub_bot_concat += sub_bot[j].textContent;
+
+    switch (strategy) {
+      case "css":
+        // Get the messages using CSS selectors
+        waitForElms(user_selector).then((user) => {
+          const new_user_msgs = [];
+          if (user.length > 0) {
+            const last_user = user[user.length - 1];
+            if (sub_user_selector) {
+                const sub_user = last_user.querySelector(sub_user_selector);
+                if (sub_user) {
+                  new_user_msgs.push(sub_user.textContent);
                 }
-              new_bot_msgs.push(sub_bot.textContent);
+            } else {
+              new_user_msgs.push(last_user.textContent);
             }
-          } else {
-            new_bot_msgs.push(bot[i].textContent);
           }
+          waitForElms(bot_selector).then((bot) => {
+            console.log("bot messages found");
+            console.log(bot);
+            const new_bot_msgs = [];
+            if (bot.length > 0) {
+              const last_bot = bot[bot.length - 1];
+              if (sub_bot_selector) {
+                const sub_bot = last_bot.querySelectorAll(sub_bot_selector);
+                if (sub_bot) {
+                    let sub_bot_concat = "";
+                    for (let j = 0; j < sub_bot.length; j++) {
+                        sub_bot_concat += sub_bot[j].textContent;
+                    }
+                  new_bot_msgs.push(sub_bot.textContent);
+                }
+              } else {
+                new_bot_msgs.push(last_bot.textContent);
+              }
+            }
+
+            // Get the ratings from ChatUI
+            queryAndUpdateRating(new_bot_msgs.length).then((new_ratings) => {
+              // Check if the conversation has changed, if so, send it to the server
+              checkInConversation(new_bot_msgs, new_user_msgs, new_ratings);
+            });
+          });
+
+        });
+        break;
+      case "text":
+        const userElements = document.evaluate(`//*[contains(text(), '${user_selector}') and not(ancestor-or-self::*[contains(., 'WIZ_global_data')]) and not(self::script or self::style)]`, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+        const botElements = document.evaluate(`//*[contains(text(), '${bot_selector}') and not(ancestor-or-self::*[contains(., 'WIZ_global_data')]) and not(self::script or self::style)]`, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+
+        const new_user_msgs = [];
+        if (userElements.snapshotLength > 0) {
+          new_user_msgs.push(userElements.snapshotItem(userElements.snapshotLength - 1).textContent);
         }
 
-        // Get the ratings from ChatUI
-        queryAndUpdateRating(new_bot_msgs.length).then((new_ratings) => {
-          // Check if the conversation has changed, if so, send it to the server
-          checkInConversation(new_bot_msgs, new_user_msgs, new_ratings);
-        });
-      });
+        const new_bot_msgs = [];
+        if (botElements.snapshotLength > 0) {
+          new_bot_msgs.push(botElements.snapshotItem(botElements.snapshotLength - 1).textContent);
+        }
 
-    });
+        // For now, we'll assume no ratings in text-based search
+        const new_ratings = [];
+
+        checkInConversation(new_bot_msgs, new_user_msgs, new_ratings);
+        break;
+      default:
+        console.log("Unknown strategy:", strategy);
+    }
   }
 }
 
