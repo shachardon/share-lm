@@ -1,6 +1,39 @@
 // background.js
 const API_URL = "https://share-lm-4e25a5769ac0.herokuapp.com/api/endpoint";
 
+let isUpdatingCounter = false;
+
+// ==== Simple Request Queue ====
+const requestQueue = [];
+let isProcessing = false;
+
+function enqueueStorageUpdate(updateFunction) {
+    return new Promise((resolve, reject) => {
+        requestQueue.push({ updateFunction, resolve, reject });
+        processQueue();
+    });
+}
+
+function processQueue() {
+    if (isProcessing || requestQueue.length === 0) return;
+
+    isProcessing = true;
+    const { updateFunction, resolve, reject } = requestQueue.shift();
+
+    updateFunction()
+        .then((result) => {
+            resolve(result);
+            isProcessing = false;
+            processQueue();
+        })
+        .catch((error) => {
+            reject(error);
+            isProcessing = false;
+            processQueue();
+        });
+}
+
+
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     // Ensure the tab has finished loading
     if (changeInfo.status === 'complete') {
@@ -189,15 +222,19 @@ function sendConversation(conversation_id, data_short) {
                     });
             });
 
-            getFromStorage("messages_counter_from_storage").then((messages_counter_from_storage) => {
-                let updated_messages_counter = 0;
-                if (messages_counter_from_storage) {
-                    updated_messages_counter = messages_counter_from_storage + data_short.user_msgs.length
-                } else { // first message ever!
-                    updated_messages_counter = data_short.user_msgs.length;
-                }
-                saveToStorage("messages_counter_from_storage", updated_messages_counter);
+            // getFromStorage("messages_counter_from_storage").then((messages_counter_from_storage) => {
+            //     let updated_messages_counter = 0;
+            //     if (messages_counter_from_storage) {
+            //         updated_messages_counter = messages_counter_from_storage + data_short.user_msgs.length
+            //     } else { // first message ever!
+            //         updated_messages_counter = data_short.user_msgs.length;
+            //     }
+            //     saveToStorage("messages_counter_from_storage", updated_messages_counter);
+            // });
+            safeIncrementMessagesCounter(data_short).then((newVal) => {
+                console.log("New counter:", newVal);
             });
+
         });
     });
 }
@@ -307,5 +344,23 @@ function getFromStorage(field) {
     });
     return promise;
 }
+
+function safeIncrementMessagesCounter(data_short) {
+    return enqueueStorageUpdate(async () => {
+        const messages_counter_from_storage = await getFromStorage("messages_counter_from_storage");
+
+        let updated_messages_counter = 0;
+        if (messages_counter_from_storage) {
+            updated_messages_counter = messages_counter_from_storage + data_short.user_msgs.length;
+        } else {
+            updated_messages_counter = data_short.user_msgs.length;
+        }
+
+        await saveToStorage("messages_counter_from_storage", updated_messages_counter);
+
+        return updated_messages_counter;
+    });
+}
+
 
 handleLocalDbIds();
