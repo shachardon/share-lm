@@ -162,6 +162,9 @@ function init() {
     });
 
     if (window.location.href.includes("gemini.google.com")) {
+      const style = document.createElement('style');
+      style.innerHTML = 'body { padding-top: 50px !important; }';
+      document.head.appendChild(style);
       console.log("Gemini website detected");
       gemini_app = document.body;
       app = gemini_app;
@@ -180,6 +183,7 @@ function init() {
         addBadge();
       }
       setInterval(queryAndUpdateConversationsGemini, 7000);
+      setInterval(addBadge, 5000);
     }
 
 
@@ -425,12 +429,16 @@ function init() {
       age_verified = ageVerificationCheckbox.checked;
       saveToStorage("age_verified", age_verified);
       if (age_verified) {
+        const verificationBadge = document.getElementById("shareLM-needs-verification-badge");
+        if (verificationBadge) {
+          verificationBadge.remove();
+        }
+        if (app.contains(floatingBadge)) {
+          app.removeChild(floatingBadge);
+        }
         addBadge();
       } else {
         addNeedVerificationBadge();
-      }
-      if (app.contains(floatingBadge)) {
-        app.removeChild(floatingBadge);
       }
     });
 
@@ -464,6 +472,10 @@ function init() {
     container.style.background = "linear-gradient(to right, white, #E88F8F, white)";
     container.style.width = "100%";
     container.style.textAlign = "center";
+    container.style.position = "fixed";
+    container.style.top = "0";
+    container.style.left = "0";
+    container.style.zIndex = "9999";
     container.style.fontFamily = "Source Sans Pro,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI," +
         "Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji"; // Fallback fonts included
     container.style.color = "black";
@@ -491,8 +503,8 @@ function init() {
 
     container.appendChild(showBadgeButton);
 
-    // Add the need-verification badge to the top of the iframe
-    app.insertAdjacentElement("beforebegin", container);
+    // Add the need-verification badge to the top of the page
+    document.body.insertBefore(container, document.body.firstChild);
   }
 
 
@@ -526,6 +538,10 @@ function init() {
       container.style.background = "linear-gradient(to right, white,  #Bde8b7, white)";
       container.style.width = "100%";
       container.style.textAlign = "center";
+      container.style.position = "fixed";
+      container.style.top = "0";
+      container.style.left = "0";
+      container.style.zIndex = "9999";
       container.style.fontFamily = "Source Sans Pro,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI," +
           "Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji"; // Fallback fonts included
       container.textContent = 'Your conversation is shared with the community! 💬';
@@ -587,27 +603,8 @@ function init() {
 
       container.appendChild(button);
       if (!document.getElementById("shareLM-badge")) {
-      if (!app.insertAdjacentElement("beforebegin", container)) {
-        console.log("badge failed to add");
-        if (!app.parentNode) {
-          console.log("app has no parent node - insertAdjacentElement won't work");
-          // look again for the app element
-          if (openai_app) {
-            app = document.querySelector("body > div.flex.h-full.w-full.flex-col");
-          } else if (claude_ai_app) {
-            app = document.querySelector("body > div.flex.min-h-screen.w-full");
-          }
-          if (app) {
-            console.log("app found again");
-            if (!document.getElementById("shareLM-badge")) {
-              if (!app.insertAdjacentElement("beforebegin", container)) {
-                console.log("badge failed to add again");
-              }
-            }
-          }
-        }
+        document.body.insertBefore(container, document.body.firstChild);
       }
-    }
     });
   }
 
@@ -616,32 +613,40 @@ function init() {
     console.log("checking conversation...");
     let new_conversation = false;
     let need_update = false;
-
-    // If the number of user messages or bot messages has changed, we need an update.
-    if (cur_bot_msgs.length !== new_bot_msgs.length || cur_user_msgs.length !== new_user_msgs.length) {
+    if (cur_bot_msgs.length < new_bot_msgs.length) {
       need_update = true;
-      new_conversation = true; // Force a new conversation for every change
-    } else {
-      // Check if the content of the messages has changed
+      // Verify if the new conversation is a continuation of the previous one
       for (let i = 0; i < cur_bot_msgs.length; i++) {
-        if (cur_bot_msgs[i] !== new_bot_msgs[i] || cur_user_msgs[i] !== new_user_msgs[i]) {
+        if (cur_bot_msgs[i] !== new_bot_msgs[i]) {
+          new_conversation = true;
+          break;
+        }
+      }
+
+    } else if (cur_bot_msgs.length > new_bot_msgs.length) {
+      new_conversation = true;
+      need_update = true;
+    } else {
+      // Same length
+      for (let i = 0; i < cur_bot_msgs.length; i++) {
+        if (cur_bot_msgs[i] !== new_bot_msgs[i]) {
           need_update = true;
-          new_conversation = true; // Force a new conversation for every change
+          if (i < cur_bot_msgs.length - 1 || cur_user_msgs[i] !== new_user_msgs[i]) { // if this is only the last message that changed, it's not a new conversation
+            new_conversation = true;
+          }
           break;
         }
       }
     }
 
     // Check if the ratings have changed
-    if (!need_update) {
-      if (cur_ratings.length !== new_ratings.length) {
-        need_update = true;
-      } else {
-        for (let i = 0; i < cur_ratings.length; i++) {
-          if (cur_ratings[i] !== new_ratings[i]) {
-            need_update = true;
-            break;
-          }
+    if (cur_ratings.length !== new_ratings.length) {
+      need_update = true;
+    } else {
+      for (let i = 0; i < cur_ratings.length; i++) {
+        if (cur_ratings[i] !== new_ratings[i]) {
+          need_update = true;
+          break;
         }
       }
     }
@@ -653,9 +658,11 @@ function init() {
   function checkInConversation(new_bot_msgs, new_user_msgs, new_ratings) {
     let [new_conversation, need_update] = checkConversationStatus(new_bot_msgs, new_user_msgs, new_ratings);
 
-    if (need_update) {
-      // Force a new conversation ID for each message pair
+    if (new_conversation) {
+      // Do not use old conversation id
       cur_conversation_id = 0;
+    }
+    if (need_update) {
       // Update messages
       cur_bot_msgs = new_bot_msgs;
       cur_user_msgs = new_user_msgs;
@@ -749,25 +756,23 @@ function init() {
         // Get the messages using CSS selectors
         waitForElms(user_selector).then((user) => {
           const new_user_msgs = [];
-          if (user.length > 0) {
-            const last_user = user[user.length - 1];
+          for (let i = 0; i < user.length; i++) {
             if (sub_user_selector) {
-                const sub_user = last_user.querySelector(sub_user_selector);
+                const sub_user = user[i].querySelector(sub_user_selector);
                 if (sub_user) {
                   new_user_msgs.push(sub_user.textContent);
                 }
             } else {
-              new_user_msgs.push(last_user.textContent);
+              new_user_msgs.push(user[i].textContent);
             }
           }
           waitForElms(bot_selector).then((bot) => {
             console.log("bot messages found");
             console.log(bot);
             const new_bot_msgs = [];
-            if (bot.length > 0) {
-              const last_bot = bot[bot.length - 1];
+            for (let i = 0; i < bot.length; i++) {
               if (sub_bot_selector) {
-                const sub_bot = last_bot.querySelectorAll(sub_bot_selector);
+                const sub_bot = bot[i].querySelectorAll(sub_bot_selector);
                 if (sub_bot) {
                     let sub_bot_concat = "";
                     for (let j = 0; j < sub_bot.length; j++) {
@@ -776,7 +781,7 @@ function init() {
                   new_bot_msgs.push(sub_bot.textContent);
                 }
               } else {
-                new_bot_msgs.push(last_bot.textContent);
+                new_bot_msgs.push(bot[i].textContent);
               }
             }
 
@@ -794,13 +799,13 @@ function init() {
         const botElements = document.evaluate(`//*[contains(text(), '${bot_selector}') and not(ancestor-or-self::*[contains(., 'WIZ_global_data')]) and not(self::script or self::style)]`, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 
         const new_user_msgs = [];
-        if (userElements.snapshotLength > 0) {
-          new_user_msgs.push(userElements.snapshotItem(userElements.snapshotLength - 1).textContent);
+        for (let i = 0; i < userElements.snapshotLength; i++) {
+          new_user_msgs.push(userElements.snapshotItem(i).textContent);
         }
 
-        const new_bot_msgs = [];
-        if (botElements.snapshotLength > 0) {
-          new_bot_msgs.push(botElements.snapshotItem(botElements.snapshotLength - 1).textContent);
+        const new__bot_msgs = [];
+        for (let i = 0; i < botElements.snapshotLength; i++) {
+          new_bot_msgs.push(botElements.snapshotItem(i).textContent);
         }
 
         // For now, we'll assume no ratings in text-based search
