@@ -19,7 +19,7 @@ And this is so easy, so no excuses!
 
 ## Usage
 
-The ShareLM plugin in action. You can use the plugin popup to go over your collected conversations from the last 24 hours and rate them. You can also use the popup to delete conversations that you don’t want to share before they are pushed to the database.
+You can use the plugin popup to go over your collected conversations from the last 24 hours and rate them. You can also use the popup to delete conversations that you don’t want to share before they are pushed to the database.
 
 You will see the green banner (and green icon) as long as you are in a supported demo. The conversations will be automatically collected and published for you.
 
