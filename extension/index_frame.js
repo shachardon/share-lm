@@ -176,14 +176,17 @@ function init() {
         handleDataUpdatesFromPopup();
       }
 
-      if (!age_verified) {
-        console.log("age not verified - adding need verification badge");
-        addNeedVerificationBadge();
-      } else {
-        addBadge();
-      }
-      setInterval(queryAndUpdateConversationsGemini, 7000);
-      setInterval(addBadge, 5000);
+      getFromStorage("age_verified").then((age_verified_from_storage) => {
+        age_verified = age_verified_from_storage ?? false;
+        if (!age_verified) {
+          console.log("age not verified - adding need verification badge");
+          addNeedVerificationBadge();
+        } else {
+          addBadge();
+        }
+        setInterval(queryAndUpdateConversationsGemini, 7000);
+        setInterval(addBadge, 5000);
+      });
     }
 
 
@@ -737,85 +740,57 @@ function init() {
   function queryAndUpdateConversationsGemini() {
     queryAndUpdateConversations(
         "div.query-text",
-        "div.markdown-main-panel",
-        null,
-        null,
-        "css"
+        "div.markdown-main-panel"
     );
   }
 
 
-    function queryAndUpdateConversations(user_selector, bot_selector, sub_user_selector, sub_bot_selector, strategy = "css") {
+    function queryAndUpdateConversations(user_selector, bot_selector, sub_user_selector, sub_bot_selector) {
     if (!shouldShare || !age_verified) {
       console.log("Sharing is disabled, not updating conversation");
       return;
     }
 
-    switch (strategy) {
-      case "css":
-        // Get the messages using CSS selectors
-        waitForElms(user_selector).then((user) => {
-          const new_user_msgs = [];
-          for (let i = 0; i < user.length; i++) {
-            if (sub_user_selector) {
-                const sub_user = user[i].querySelector(sub_user_selector);
-                if (sub_user) {
-                  new_user_msgs.push(sub_user.textContent);
-                }
-            } else {
-              new_user_msgs.push(user[i].textContent);
+    // Get the messages using CSS selectors
+    waitForElms(user_selector).then((user) => {
+      const new_user_msgs = [];
+      for (let i = 0; i < user.length; i++) {
+        if (sub_user_selector) {
+            const sub_user = user[i].querySelector(sub_user_selector);
+            if (sub_user) {
+              new_user_msgs.push(sub_user.textContent);
             }
+        } else {
+          new_user_msgs.push(user[i].textContent);
+        }
+      }
+      waitForElms(bot_selector).then((bot) => {
+        console.log("bot messages found");
+        console.log(bot);
+        const new_bot_msgs = [];
+        for (let i = 0; i < bot.length; i++) {
+          if (sub_bot_selector) {
+            const sub_bot = bot[i].querySelectorAll(sub_bot_selector);
+            if (sub_bot) {
+                let sub_bot_concat = "";
+                for (let j = 0; j < sub_bot.length; j++) {
+                    sub_bot_concat += sub_bot[j].textContent;
+                }
+              new_bot_msgs.push(sub_bot.textContent);
+            }
+          } else {
+            new_bot_msgs.push(bot[i].textContent);
           }
-          waitForElms(bot_selector).then((bot) => {
-            console.log("bot messages found");
-            console.log(bot);
-            const new_bot_msgs = [];
-            for (let i = 0; i < bot.length; i++) {
-              if (sub_bot_selector) {
-                const sub_bot = bot[i].querySelectorAll(sub_bot_selector);
-                if (sub_bot) {
-                    let sub_bot_concat = "";
-                    for (let j = 0; j < sub_bot.length; j++) {
-                        sub_bot_concat += sub_bot[j].textContent;
-                    }
-                  new_bot_msgs.push(sub_bot.textContent);
-                }
-              } else {
-                new_bot_msgs.push(bot[i].textContent);
-              }
-            }
+        }
 
-            // Get the ratings from ChatUI
-            queryAndUpdateRating(new_bot_msgs.length).then((new_ratings) => {
-              // Check if the conversation has changed, if so, send it to the server
-              checkInConversation(new_bot_msgs, new_user_msgs, new_ratings);
-            });
-          });
-
+        // Get the ratings from ChatUI
+        queryAndUpdateRating(new_bot_msgs.length).then((new_ratings) => {
+          // Check if the conversation has changed, if so, send it to the server
+          checkInConversation(new_bot_msgs, new_user_msgs, new_ratings);
         });
-        break;
-      case "text":
-        const userElements = document.evaluate(`//*[contains(text(), '${user_selector}') and not(ancestor-or-self::*[contains(., 'WIZ_global_data')]) and not(self::script or self::style)]`, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-        const botElements = document.evaluate(`//*[contains(text(), '${bot_selector}') and not(ancestor-or-self::*[contains(., 'WIZ_global_data')]) and not(self::script or self::style)]`, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+      });
 
-        const new_user_msgs = [];
-        for (let i = 0; i < userElements.snapshotLength; i++) {
-          new_user_msgs.push(userElements.snapshotItem(i).textContent);
-        }
-
-        const new__bot_msgs = [];
-        for (let i = 0; i < botElements.snapshotLength; i++) {
-          new_bot_msgs.push(botElements.snapshotItem(i).textContent);
-        }
-
-        // For now, we'll assume no ratings in text-based search
-        const new_ratings = [];
-
-        checkInConversation(new_bot_msgs, new_user_msgs, new_ratings);
-        break;
-      default:
-        console.log("Unknown strategy:", strategy);
-    }
+    });
   }
 }
 
