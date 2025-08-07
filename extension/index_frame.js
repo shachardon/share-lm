@@ -160,6 +160,36 @@ function init() {
 
     });
 
+    // Let's find the grok element
+    waitForElm('body > div[class*="group/sidebar-wrapper"][class*="min-h-svh"][class*="bg-sidebar"]').then((grok_app_from_storage) => {
+      grok_app = grok_app_from_storage;
+      if (!grok_app) {
+        console.log("Couldn't find grok-app.");
+      } else {
+        shouldShare = true;
+        app = grok_app;
+        console.log("grok-app found!", grok_app);
+      }
+
+      if (!init_already || grok_app) {
+        init_already = true;
+        getUserInfoFromStorage();
+        handleDataUpdatesFromPopup();
+      }
+
+      if (grok_app) {
+        if (!age_verified) {
+          console.log("age not verified - adding need verification badge");
+          addNeedVerificationBadge();
+        } else {
+          addBadge();
+        }
+        // You may need to implement queryAndUpdateConversationsGrok if needed
+        setInterval(queryAndUpdateConversationsGrok, 7000);
+        setInterval(addBadge, 50000);
+      }
+    });
+
 
   // *********************************************** Functions ***********************************************
 
@@ -713,6 +743,15 @@ function init() {
   function queryAndUpdateConversationsClaudeAI() {
     queryAndUpdateConversations("[data-testid=\"user-message\"]",
         ".font-claude-message");//,
+  }
+
+  function queryAndUpdateConversationsGrok() {
+    //user : class="relative group flex flex-col justify-center w-full max-w-[var(--content-max-width)] pb-0.5 items-end"
+    // bot : class="relative group flex flex-col justify-center w-full max-w-[var(--content-max-width)] pb-0.5 items-end"
+    queryAndUpdateConversations(
+      "[class=\"relative group flex flex-col justify-center w-full max-w-[var(--content-max-width)] pb-0.5 items-end\"]",
+      "[class=\"relative group flex flex-col justify-center w-full max-w-[var(--content-max-width)] pb-0.5 items-start\"]"
+    )
   }
 
 
