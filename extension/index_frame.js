@@ -556,6 +556,8 @@ function init() {
           "Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji"; // Fallback fonts included
       button.style.margin = "7px";
       button.style.marginLeft = "20px";
+      button.style.background = "transparent"; 
+      button.style.border = "1px solid black";
 
       if (!shouldShare) {
         container.textContent = 'Your conversation is not shared with the community ☹️';
@@ -605,8 +607,9 @@ function init() {
       });
 
       container.appendChild(button);
-      if (!document.getElementById("shareLM-badge")) {
-        document.body.insertBefore(container, document.body.firstChild);
+      if (!document.getElementById("shareLM-badge")) { 
+        if (!app.insertAdjacentElement("beforebegin", container)) { console.log("badge failed to add");} 
+          if (!app.parentNode) { console.log("app has no parent node - insertAdjacentElement won't work");} // look again for the app element if (openai_app) { app = document.querySelector("body > div.flex.h-full.w-full.flex-col"); } else if (claude_ai_app) { app = document.querySelector("body > div.flex.min-h-screen.w-full"); } if (app) { console.log("app found again"); if (!document.getElementById("shareLM-badge")) { if (!app.insertAdjacentElement("beforebegin", container)) { console.log("badge failed to add again"); } } } } } }
       }
     });
   }
