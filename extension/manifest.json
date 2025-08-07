@@ -31,8 +31,10 @@
   "background": {
     "service_worker": "background.js"
   },
-  "host_permissions": ["https://huggingface.co/spaces/*", "https://*/hf.space/*"],
+  "host_permissions": ["https://huggingface.co/spaces/*", "https://*/hf.space/*", "https://poe.com/"],
   "permissions": [
     "storage",
-    "activeTab"]
+    "activeTab",
+    "cookies"
+  ]
 }

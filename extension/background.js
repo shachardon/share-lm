@@ -159,6 +159,11 @@ function handleLocalDbIds() {
         } else if (request.type === "publish") {
             removeInvalidAndPostToDb(false);
             console.log("got publish request");
+        } else if (request.type === "get_cookies") {
+            chrome.cookies.getAll({domain: request.domain}, (cookies) => {
+                sendResponse(cookies);
+            });
+            return true; // Indicates that the response is sent asynchronously
         }
     });
 }
