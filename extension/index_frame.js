@@ -21,6 +21,7 @@ function init() {
   let chat_ui_app;
   let openai_app;
   let claude_ai_app;
+  let gemini_app;
   let app;
   let init_already = false;
 
@@ -159,6 +160,34 @@ function init() {
       }
 
     });
+
+    if (window.location.href.includes("gemini.google.com")) {
+      const style = document.createElement('style');
+      style.innerHTML = 'body { padding-top: 50px !important; }';
+      document.head.appendChild(style);
+      console.log("Gemini website detected");
+      gemini_app = document.body;
+      app = gemini_app;
+      shouldShare = true;
+
+      if (!init_already) {
+        init_already = true;
+        getUserInfoFromStorage();
+        handleDataUpdatesFromPopup();
+      }
+
+      getFromStorage("age_verified").then((age_verified_from_storage) => {
+        age_verified = age_verified_from_storage ?? false;
+        if (!age_verified) {
+          console.log("age not verified - adding need verification badge");
+          addNeedVerificationBadge();
+        } else {
+          addBadge();
+        }
+        setInterval(queryAndUpdateConversationsGemini, 7000);
+        setInterval(addBadge, 5000);
+      });
+    }
 
 
   // *********************************************** Functions ***********************************************
@@ -403,12 +432,16 @@ function init() {
       age_verified = ageVerificationCheckbox.checked;
       saveToStorage("age_verified", age_verified);
       if (age_verified) {
+        const verificationBadge = document.getElementById("shareLM-needs-verification-badge");
+        if (verificationBadge) {
+          verificationBadge.remove();
+        }
+        if (app.contains(floatingBadge)) {
+          app.removeChild(floatingBadge);
+        }
         addBadge();
       } else {
         addNeedVerificationBadge();
-      }
-      if (app.contains(floatingBadge)) {
-        app.removeChild(floatingBadge);
       }
     });
 
@@ -442,6 +475,10 @@ function init() {
     container.style.background = "linear-gradient(to right, white, #E88F8F, white)";
     container.style.width = "100%";
     container.style.textAlign = "center";
+    container.style.position = "fixed";
+    container.style.top = "0";
+    container.style.left = "0";
+    container.style.zIndex = "9999";
     container.style.fontFamily = "Source Sans Pro,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI," +
         "Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji"; // Fallback fonts included
     container.style.color = "black";
@@ -469,8 +506,8 @@ function init() {
 
     container.appendChild(showBadgeButton);
 
-    // Add the need-verification badge to the top of the iframe
-    app.insertAdjacentElement("beforebegin", container);
+    // Add the need-verification badge to the top of the page
+    document.body.insertBefore(container, document.body.firstChild);
   }
 
 
@@ -504,6 +541,10 @@ function init() {
       container.style.background = "linear-gradient(to right, white,  #Bde8b7, white)";
       container.style.width = "100%";
       container.style.textAlign = "center";
+      container.style.position = "fixed";
+      container.style.top = "0";
+      container.style.left = "0";
+      container.style.zIndex = "9999";
       container.style.fontFamily = "Source Sans Pro,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI," +
           "Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji"; // Fallback fonts included
       container.textContent = 'Your conversation is shared with the community! 💬';
@@ -515,6 +556,8 @@ function init() {
           "Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji"; // Fallback fonts included
       button.style.margin = "7px";
       button.style.marginLeft = "20px";
+      button.style.background = "transparent"; 
+      button.style.border = "1px solid black";
 
       if (!shouldShare) {
         container.textContent = 'Your conversation is not shared with the community ☹️';
@@ -564,28 +607,10 @@ function init() {
       });
 
       container.appendChild(button);
-      if (!document.getElementById("shareLM-badge")) {
-      if (!app.insertAdjacentElement("beforebegin", container)) {
-        console.log("badge failed to add");
-        if (!app.parentNode) {
-          console.log("app has no parent node - insertAdjacentElement won't work");
-          // look again for the app element
-          if (openai_app) {
-            app = document.querySelector("body > div.flex.h-full.w-full.flex-col");
-          } else if (claude_ai_app) {
-            app = document.querySelector("body > div.flex.min-h-screen.w-full");
-          }
-          if (app) {
-            console.log("app found again");
-            if (!document.getElementById("shareLM-badge")) {
-              if (!app.insertAdjacentElement("beforebegin", container)) {
-                console.log("badge failed to add again");
-              }
-            }
-          }
-        }
+      if (!document.getElementById("shareLM-badge")) { 
+        if (!app.insertAdjacentElement("beforebegin", container)) { console.log("badge failed to add");} 
+          if (!app.parentNode) { console.log("app has no parent node - insertAdjacentElement won't work");} // look again for the app element if (openai_app) { app = document.querySelector("body > div.flex.h-full.w-full.flex-col"); } else if (claude_ai_app) { app = document.querySelector("body > div.flex.min-h-screen.w-full"); } if (app) { console.log("app found again"); if (!document.getElementById("shareLM-badge")) { if (!app.insertAdjacentElement("beforebegin", container)) { console.log("badge failed to add again"); } } } } } }
       }
-    }
     });
   }
 
@@ -715,13 +740,21 @@ function init() {
         ".font-claude-message");//,
   }
 
+  function queryAndUpdateConversationsGemini() {
+    queryAndUpdateConversations(
+        "div.query-text",
+        "div.markdown-main-panel"
+    );
+  }
+
 
     function queryAndUpdateConversations(user_selector, bot_selector, sub_user_selector, sub_bot_selector) {
     if (!shouldShare || !age_verified) {
-      console.log("Sharing is disables, not updating conversation");
+      console.log("Sharing is disabled, not updating conversation");
       return;
     }
-    // Get the messages
+
+    // Get the messages using CSS selectors
     waitForElms(user_selector).then((user) => {
       const new_user_msgs = [];
       for (let i = 0; i < user.length; i++) {
