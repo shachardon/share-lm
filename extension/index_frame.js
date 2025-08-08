@@ -633,9 +633,27 @@ function init() {
       });
 
       container.appendChild(button);
-      if (!document.getElementById("shareLM-badge")) { 
-        if (!app.insertAdjacentElement("beforebegin", container)) { console.log("badge failed to add");} 
-          if (!app.parentNode) { console.log("app has no parent node - insertAdjacentElement won't work");} // look again for the app element if (openai_app) { app = document.querySelector("body > div.flex.h-full.w-full.flex-col"); } else if (claude_ai_app) { app = document.querySelector("body > div.flex.min-h-screen.w-full"); } if (app) { console.log("app found again"); if (!document.getElementById("shareLM-badge")) { if (!app.insertAdjacentElement("beforebegin", container)) { console.log("badge failed to add again"); } } } } } }
+      if (!document.getElementById("shareLM-badge")) {
+        if (!app.insertAdjacentElement("beforebegin", container)) {
+          console.log("badge failed to add");
+          if (!app.parentNode) {
+            console.log("app has no parent node - insertAdjacentElement won't work");
+            // look again for the app element
+            if (openai_app) {
+              app = document.querySelector("body > div.flex.h-full.w-full.flex-col");
+            } else if (claude_ai_app) {
+              app = document.querySelector("body > div.flex.min-h-screen.w-full");
+            }
+            if (app) {
+              console.log("app found again");
+              if (!document.getElementById("shareLM-badge")) {
+                if (!app.insertAdjacentElement("beforebegin", container)) {
+                  console.log("badge failed to add again");
+                }
+              }
+            }
+          }
+        }
       }
     });
   }
