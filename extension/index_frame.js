@@ -22,6 +22,7 @@ function init() {
   let openai_app;
   let claude_ai_app;
   let gemini_app;
+  let mistral_app;
   let app;
   let init_already = false;
 
@@ -188,6 +189,35 @@ function init() {
         setInterval(addBadge, 5000);
       });
     }
+
+    // Let's find the mistral-app element
+    waitForElm("main").then((mistral_app_from_storage) => {
+      mistral_app = mistral_app_from_storage;
+
+      if (!mistral_app) {
+        console.log("Couldn't find mistral-app.")
+      } else {
+        shouldShare = true;
+        app = mistral_app;
+        console.log("mistral-app found!", mistral_app);
+      }
+
+      if (!init_already || mistral_app) {
+        init_already = true;
+        getUserInfoFromStorage();
+        handleDataUpdatesFromPopup();
+      }
+
+      if (mistral_app) {
+        if (!age_verified) {
+          console.log("age not verified - adding need verification badge");
+          addNeedVerificationBadge();
+        } else {
+          addBadge();
+        }
+        setInterval(queryAndUpdateConversationsMistral, 7000);
+      }
+    });
 
 
   // *********************************************** Functions ***********************************************
@@ -762,6 +792,13 @@ function init() {
     queryAndUpdateConversations(
         "div.query-text",
         "div.markdown-main-panel"
+    );
+  }
+
+  function queryAndUpdateConversationsMistral() {
+    queryAndUpdateConversations(
+        "div.ms-auto.bg-basic-gray-alpha-4 > div > div > div",
+        "div.flex.min-w-0.flex-1.flex-col > div.flex.w-full.flex-col.gap-2.break-words > div"
     );
   }
 
