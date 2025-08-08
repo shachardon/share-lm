@@ -799,8 +799,8 @@ function init() {
 
   function queryAndUpdateConversationsMistral() {
     queryAndUpdateConversations(
-        "div.ms-auto.bg-basic-gray-alpha-4 > div > div > div",
-        "div.flex.min-w-0.flex-1.flex-col > div.flex.w-full.flex-col.gap-2.break-words > div"
+        '[data-message-author-role="user"] .select-text',
+        '[data-message-author-role="assistant"] [data-message-part-type="answer"]'
     );
   }
 
