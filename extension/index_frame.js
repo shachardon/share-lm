@@ -16,6 +16,9 @@ function init() {
   let cur_user_msgs = [];
   let cur_ratings = [];
 
+  let verificationBannerInterval;
+  let sharingBannerInterval;
+
 
   let gradio_app;
   let chat_ui_app;
@@ -125,7 +128,7 @@ function init() {
               addBadge();
           }
           setInterval(queryAndUpdateConversationsOpenAI, 7000);
-          setInterval(addBadge, 50000);
+          sharingBannerInterval = setInterval(addBadge, 50000);
       }
     });
 
@@ -186,7 +189,7 @@ function init() {
           addBadge();
         }
         setInterval(queryAndUpdateConversationsGemini, 7000);
-        setInterval(addBadge, 5000);
+        sharingBannerInterval = setInterval(addBadge, 5000);
       });
     }
 
@@ -213,10 +216,10 @@ function init() {
           if (!age_verified) {
             console.log("age not verified - adding need verification badge");
             addNeedVerificationBadge();
-            setInterval(addNeedVerificationBadge, 5000);
+            verificationBannerInterval = setInterval(addNeedVerificationBadge, 5000);
           } else {
             addBadge();
-            setInterval(addBadge, 5000);
+            sharingBannerInterval = setInterval(addBadge, 5000);
           }
           setInterval(queryAndUpdateConversationsMistral, 7000);
         }
@@ -473,7 +476,9 @@ function init() {
         if (document.body.contains(floatingBadge)) {
           document.body.removeChild(floatingBadge);
         }
+        clearInterval(verificationBannerInterval);
         addBadge();
+        sharingBannerInterval = setInterval(addBadge, 5000);
       } else {
         addNeedVerificationBadge();
       }
@@ -507,12 +512,16 @@ function init() {
     const container = document.createElement("div");
     container.id = "shareLM-needs-verification-badge";
     container.style.background = "linear-gradient(to right, white, #E88F8F, white)";
-    container.style.width = "100%";
-    container.style.textAlign = "center";
+    container.style.width = "fit-content";
+    container.style.padding = "2px 20px";
+    container.style.borderRadius = "0 0 10px 10px";
+    container.style.left = "50%";
+    container.style.transform = "translateX(-50%)";
     container.style.position = "fixed";
     container.style.top = "0";
-    container.style.left = "0";
     container.style.zIndex = "9999";
+    container.style.display = "flex";
+    container.style.alignItems = "center";
     container.style.fontFamily = "Source Sans Pro,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI," +
         "Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji"; // Fallback fonts included
     container.style.color = "black";
@@ -526,7 +535,7 @@ function init() {
     showBadgeButton.id = "terms-of-use-button";
     showBadgeButton.textContent = 'Terms of Use';
     showBadgeButton.classList.add('disable-sharing-button');
-    showBadgeButton.style.margin = "7px";
+    showBadgeButton.style.margin = "0 7px 0 20px";
     showBadgeButton.style.marginLeft = "20px";
     showBadgeButton.addEventListener("click", function () {
       console.log("clicked terms of use button");
@@ -573,12 +582,16 @@ function init() {
       container.id = "shareLM-badge";
       container.style.color = "black";
       container.style.background = "linear-gradient(to right, white,  #Bde8b7, white)";
-      container.style.width = "100%";
-      container.style.textAlign = "center";
+      container.style.width = "fit-content";
+      container.style.padding = "2px 20px";
+      container.style.borderRadius = "0 0 10px 10px";
+      container.style.left = "50%";
+      container.style.transform = "translateX(-50%)";
       container.style.position = "fixed";
       container.style.top = "0";
-      container.style.left = "0";
       container.style.zIndex = "9999";
+      container.style.display = "flex";
+      container.style.alignItems = "center";
       container.style.fontFamily = "Source Sans Pro,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI," +
           "Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji"; // Fallback fonts included
       container.textContent = 'Your conversation is shared with the community! 💬';
@@ -588,7 +601,7 @@ function init() {
       button.classList.add('disable-sharing-button');
       button.style.fontFamily = "Source Sans Pro,ui-ssans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI," +
           "Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji"; // Fallback fonts included
-      button.style.margin = "7px";
+      button.style.margin = "0 7px 0 20px";
       button.style.marginLeft = "20px";
       button.style.background = "transparent"; 
       button.style.border = "1px solid black";
