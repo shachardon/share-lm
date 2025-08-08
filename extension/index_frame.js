@@ -213,8 +213,10 @@ function init() {
           if (!age_verified) {
             console.log("age not verified - adding need verification badge");
             addNeedVerificationBadge();
+            setInterval(addNeedVerificationBadge, 5000);
           } else {
             addBadge();
+            setInterval(addBadge, 5000);
           }
           setInterval(queryAndUpdateConversationsMistral, 7000);
         }
@@ -297,10 +299,10 @@ function init() {
       } else if (request.type === "termsOfUse" && app) {
         console.log("terms of use clicked");
         const floatingBadge = addTermsOfUse();
-        if (app.contains(floatingBadge)) {
+        if (document.body.contains(floatingBadge)) {
           console.log("floating badge already exists");
         } else {
-          app.appendChild(floatingBadge);
+          document.body.appendChild(floatingBadge);
           console.log("added floating badge");
         }
       // } else if (request.type === "publish") {
@@ -468,8 +470,8 @@ function init() {
         if (verificationBadge) {
           verificationBadge.remove();
         }
-        if (app.contains(floatingBadge)) {
-          app.removeChild(floatingBadge);
+        if (document.body.contains(floatingBadge)) {
+          document.body.removeChild(floatingBadge);
         }
         addBadge();
       } else {
@@ -485,7 +487,7 @@ function init() {
     // Close the floating badge when the close button is clicked
     const closeBadgeButton = floatingBadge.querySelector("#close-badge-button");
     closeBadgeButton.addEventListener("click", function () {
-      app.removeChild(floatingBadge);
+      document.body.removeChild(floatingBadge);
     });
 
     return floatingBadge;
@@ -528,10 +530,10 @@ function init() {
     showBadgeButton.style.marginLeft = "20px";
     showBadgeButton.addEventListener("click", function () {
       console.log("clicked terms of use button");
-      if (app.contains(floatingBadge)) {
+      if (document.body.contains(floatingBadge)) {
         console.log("floating badge already exists");
       } else {
-        app.appendChild(floatingBadge);
+        document.body.appendChild(floatingBadge);
         console.log("added floating badge");
       }
     });
@@ -649,6 +651,10 @@ function init() {
               app = document.querySelector("body > div.flex.h-full.w-full.flex-col");
             } else if (claude_ai_app) {
               app = document.querySelector("body > div.flex.min-h-screen.w-full");
+            } else if (gemini_app) {
+              app = document.body;
+            } else if (mistral_app) {
+                app = document.querySelector("main");
             }
             if (app) {
               console.log("app found again");
