@@ -190,34 +190,36 @@ function init() {
       });
     }
 
-    // Let's find the mistral-app element
-    waitForElm("main").then((mistral_app_from_storage) => {
-      mistral_app = mistral_app_from_storage;
+    if (window.location.href.includes("chat.mistral.ai")) {
+      // Let's find the mistral-app element
+      waitForElm("main").then((mistral_app_from_storage) => {
+        mistral_app = mistral_app_from_storage;
 
-      if (!mistral_app) {
-        console.log("Couldn't find mistral-app.")
-      } else {
-        shouldShare = true;
-        app = mistral_app;
-        console.log("mistral-app found!", mistral_app);
-      }
-
-      if (!init_already || mistral_app) {
-        init_already = true;
-        getUserInfoFromStorage();
-        handleDataUpdatesFromPopup();
-      }
-
-      if (mistral_app) {
-        if (!age_verified) {
-          console.log("age not verified - adding need verification badge");
-          addNeedVerificationBadge();
+        if (!mistral_app) {
+          console.log("Couldn't find mistral-app.")
         } else {
-          addBadge();
+          shouldShare = true;
+          app = mistral_app;
+          console.log("mistral-app found!", mistral_app);
         }
-        setInterval(queryAndUpdateConversationsMistral, 7000);
-      }
-    });
+
+        if (!init_already || mistral_app) {
+          init_already = true;
+          getUserInfoFromStorage();
+          handleDataUpdatesFromPopup();
+        }
+
+        if (mistral_app) {
+          if (!age_verified) {
+            console.log("age not verified - adding need verification badge");
+            addNeedVerificationBadge();
+          } else {
+            addBadge();
+          }
+          setInterval(queryAndUpdateConversationsMistral, 7000);
+        }
+      });
+    }
 
 
   // *********************************************** Functions ***********************************************
