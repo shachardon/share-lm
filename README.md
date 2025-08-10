@@ -38,7 +38,7 @@ You can use the plugin popup to go over your collected conversations from the la
 
 You will see the green banner (and green icon) as long as you are in a supported demo. The conversations will be automatically collected and published for you.
 
-The plugin supports ChatGPT, Claude, Gemini, Poe and all Gradio/ChatUI LLM demos -- so go try your favorite one! 🤗
+The plugin supports ChatGPT, Claude, Gemini, Poe, all Gradio/ChatUI LLM demos and the others mentioned in the [list](Supported_models_and_websites.txt) -- so go try your favorite one! 🤗
 
 ## What is unique about ShareLM?
 
