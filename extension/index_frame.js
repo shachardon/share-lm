@@ -16,8 +16,6 @@ function init() {
   let cur_user_msgs = [];
   let cur_ratings = [];
 
-  let verificationBannerInterval;
-  let sharingBannerInterval;
 
 
   let gradio_app;
@@ -128,7 +126,7 @@ function init() {
               addBadge();
           }
           setInterval(queryAndUpdateConversationsOpenAI, 7000);
-          sharingBannerInterval = setInterval(addBadge, 50000);
+          setInterval(addBadge, 50000);
       }
     });
 
@@ -189,7 +187,7 @@ function init() {
           addBadge();
         }
         setInterval(queryAndUpdateConversationsGemini, 7000);
-        sharingBannerInterval = setInterval(addBadge, 5000);
+        setInterval(addBadge, 5000);
       });
     }
 
@@ -216,10 +214,9 @@ function init() {
           if (!age_verified) {
             console.log("age not verified - adding need verification badge");
             addNeedVerificationBadge();
-            verificationBannerInterval = setInterval(addNeedVerificationBadge, 5000);
           } else {
             addBadge();
-            sharingBannerInterval = setInterval(addBadge, 5000);
+            setInterval(addBadge, 5000);
           }
           setInterval(queryAndUpdateConversationsMistral, 7000);
         }
@@ -476,9 +473,8 @@ function init() {
         if (document.body.contains(floatingBadge)) {
           document.body.removeChild(floatingBadge);
         }
-        clearInterval(verificationBannerInterval);
         addBadge();
-        sharingBannerInterval = setInterval(addBadge, 5000);
+        setInterval(addBadge, 5000);
       } else {
         addNeedVerificationBadge();
       }
