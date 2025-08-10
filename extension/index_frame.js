@@ -17,11 +17,13 @@ function init() {
   let cur_ratings = [];
 
 
+
   let gradio_app;
   let chat_ui_app;
   let openai_app;
   let claude_ai_app;
   let gemini_app;
+  let mistral_app;
   let poe_app;
   let app;
   let init_already = false;
@@ -190,6 +192,36 @@ function init() {
       });
     }
 
+    if (window.location.href.includes("chat.mistral.ai")) {
+      // Let's find the mistral-app element
+      waitForElm("main").then((mistral_app_from_storage) => {
+        mistral_app = mistral_app_from_storage;
+
+        if (!mistral_app) {
+          console.log("Couldn't find mistral-app.")
+        } else {
+          shouldShare = true;
+          app = mistral_app;
+          console.log("mistral-app found!", mistral_app);
+        }
+
+        if (!init_already || mistral_app) {
+          init_already = true;
+          getUserInfoFromStorage();
+          handleDataUpdatesFromPopup();
+        }
+
+        if (mistral_app) {
+          if (!age_verified) {
+            console.log("age not verified - adding need verification badge");
+            addNeedVerificationBadge();
+          } else {
+            addBadge();
+            setInterval(addBadge, 5000);
+          }
+          setInterval(queryAndUpdateConversationsMistral, 7000);
+        }
+
     if (window.location.href.includes("poe.com")) {
       console.log("Poe website detected");
       poe_app = document.body;
@@ -291,10 +323,10 @@ function init() {
       } else if (request.type === "termsOfUse" && app) {
         console.log("terms of use clicked");
         const floatingBadge = addTermsOfUse();
-        if (app.contains(floatingBadge)) {
+        if (document.body.contains(floatingBadge)) {
           console.log("floating badge already exists");
         } else {
-          app.appendChild(floatingBadge);
+          document.body.appendChild(floatingBadge);
           console.log("added floating badge");
         }
       // } else if (request.type === "publish") {
@@ -462,10 +494,11 @@ function init() {
         if (verificationBadge) {
           verificationBadge.remove();
         }
-        if (app.contains(floatingBadge)) {
-          app.removeChild(floatingBadge);
+        if (document.body.contains(floatingBadge)) {
+          document.body.removeChild(floatingBadge);
         }
         addBadge();
+        setInterval(addBadge, 5000);
       } else {
         addNeedVerificationBadge();
       }
@@ -479,7 +512,7 @@ function init() {
     // Close the floating badge when the close button is clicked
     const closeBadgeButton = floatingBadge.querySelector("#close-badge-button");
     closeBadgeButton.addEventListener("click", function () {
-      app.removeChild(floatingBadge);
+      document.body.removeChild(floatingBadge);
     });
 
     return floatingBadge;
@@ -499,12 +532,16 @@ function init() {
     const container = document.createElement("div");
     container.id = "shareLM-needs-verification-badge";
     container.style.background = "linear-gradient(to right, white, #E88F8F, white)";
-    container.style.width = "100%";
-    container.style.textAlign = "center";
+    container.style.width = "fit-content";
+    container.style.padding = "2px 20px";
+    container.style.borderRadius = "0 0 10px 10px";
+    container.style.left = "50%";
+    container.style.transform = "translateX(-50%)";
     container.style.position = "fixed";
     container.style.top = "0";
-    container.style.left = "0";
     container.style.zIndex = "9999";
+    container.style.display = "flex";
+    container.style.alignItems = "center";
     container.style.fontFamily = "Source Sans Pro,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI," +
         "Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji"; // Fallback fonts included
     container.style.color = "black";
@@ -518,14 +555,14 @@ function init() {
     showBadgeButton.id = "terms-of-use-button";
     showBadgeButton.textContent = 'Terms of Use';
     showBadgeButton.classList.add('disable-sharing-button');
-    showBadgeButton.style.margin = "7px";
+    showBadgeButton.style.margin = "0 7px 0 20px";
     showBadgeButton.style.marginLeft = "20px";
     showBadgeButton.addEventListener("click", function () {
       console.log("clicked terms of use button");
-      if (app.contains(floatingBadge)) {
+      if (document.body.contains(floatingBadge)) {
         console.log("floating badge already exists");
       } else {
-        app.appendChild(floatingBadge);
+        document.body.appendChild(floatingBadge);
         console.log("added floating badge");
       }
     });
@@ -565,12 +602,16 @@ function init() {
       container.id = "shareLM-badge";
       container.style.color = "black";
       container.style.background = "linear-gradient(to right, white,  #Bde8b7, white)";
-      container.style.width = "100%";
-      container.style.textAlign = "center";
+      container.style.width = "fit-content";
+      container.style.padding = "2px 20px";
+      container.style.borderRadius = "0 0 10px 10px";
+      container.style.left = "50%";
+      container.style.transform = "translateX(-50%)";
       container.style.position = "fixed";
       container.style.top = "0";
-      container.style.left = "0";
       container.style.zIndex = "9999";
+      container.style.display = "flex";
+      container.style.alignItems = "center";
       container.style.fontFamily = "Source Sans Pro,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI," +
           "Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji"; // Fallback fonts included
       container.textContent = 'Your conversation is shared with the community! 💬';
@@ -580,7 +621,7 @@ function init() {
       button.classList.add('disable-sharing-button');
       button.style.fontFamily = "Source Sans Pro,ui-ssans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI," +
           "Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji"; // Fallback fonts included
-      button.style.margin = "7px";
+      button.style.margin = "0 7px 0 20px";
       button.style.marginLeft = "20px";
       button.style.background = "transparent"; 
       button.style.border = "1px solid black";
@@ -643,6 +684,10 @@ function init() {
               app = document.querySelector("body > div.flex.h-full.w-full.flex-col");
             } else if (claude_ai_app) {
               app = document.querySelector("body > div.flex.min-h-screen.w-full");
+            } else if (gemini_app) {
+              app = document.body;
+            } else if (mistral_app) {
+                app = document.querySelector("main");
             }
             if (app) {
               console.log("app found again");
@@ -791,10 +836,16 @@ function init() {
     );
   }
 
+  function queryAndUpdateConversationsMistral() {
+    queryAndUpdateConversations(
+        '[data-message-author-role="user"] .select-text',
+        '[data-message-author-role="assistant"] [data-message-part-type="answer"]'
+
   function queryAndUpdateConversationsPoe() {
     queryAndUpdateConversations(
         ".Prose_presets_theme-on-accent__rESxX",
         ".Prose_presets_theme-hi-contrast__LQyM9"
+
     );
   }
 
