@@ -221,6 +221,8 @@ function init() {
           }
           setInterval(queryAndUpdateConversationsMistral, 7000);
         }
+      });
+    }
 
     if (window.location.href.includes("poe.com")) {
       console.log("Poe website detected");
@@ -840,6 +842,8 @@ function init() {
     queryAndUpdateConversations(
         '[data-message-author-role="user"] .select-text',
         '[data-message-author-role="assistant"] [data-message-part-type="answer"]'
+    );
+  }
 
   function queryAndUpdateConversationsPoe() {
     queryAndUpdateConversations(
@@ -850,7 +854,7 @@ function init() {
   }
 
 
-    function queryAndUpdateConversations(user_selector, bot_selector, sub_user_selector, sub_bot_selector) {
+  function queryAndUpdateConversations(user_selector, bot_selector, sub_user_selector, sub_bot_selector) {
     if (!shouldShare || !age_verified) {
       console.log("Sharing is disabled, not updating conversation");
       return;
