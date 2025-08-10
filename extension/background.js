@@ -159,7 +159,8 @@ function handleLocalDbIds() {
         } else if (request.type === "publish") {
             removeInvalidAndPostToDb(false);
             console.log("got publish request");
-        }
+        } 
+
     });
 }
 

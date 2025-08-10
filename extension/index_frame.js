@@ -22,6 +22,7 @@ function init() {
   let openai_app;
   let claude_ai_app;
   let gemini_app;
+  let poe_app;
   let app;
   let init_already = false;
 
@@ -185,6 +186,31 @@ function init() {
           addBadge();
         }
         setInterval(queryAndUpdateConversationsGemini, 7000);
+        setInterval(addBadge, 5000);
+      });
+    }
+
+    if (window.location.href.includes("poe.com")) {
+      console.log("Poe website detected");
+      poe_app = document.body;
+      app = poe_app;
+      shouldShare = true;
+
+      if (!init_already) {
+        init_already = true;
+        getUserInfoFromStorage();
+        handleDataUpdatesFromPopup();
+      }
+
+      getFromStorage("age_verified").then((age_verified_from_storage) => {
+        age_verified = age_verified_from_storage ?? false;
+        if (!age_verified) {
+          console.log("age not verified - adding need verification badge");
+          addNeedVerificationBadge();
+        } else {
+          addBadge();
+        }
+        setInterval(queryAndUpdateConversationsPoe, 7000);
         setInterval(addBadge, 5000);
       });
     }
@@ -765,6 +791,13 @@ function init() {
     );
   }
 
+  function queryAndUpdateConversationsPoe() {
+    queryAndUpdateConversations(
+        ".Prose_presets_theme-on-accent__rESxX",
+        ".Prose_presets_theme-hi-contrast__LQyM9"
+    );
+  }
+
 
     function queryAndUpdateConversations(user_selector, bot_selector, sub_user_selector, sub_bot_selector) {
     if (!shouldShare || !age_verified) {
@@ -937,7 +970,6 @@ function getFromStorage(field) {
   });
   return promise;
 }
-
 
 
 

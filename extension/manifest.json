@@ -34,5 +34,6 @@
   "host_permissions": ["https://huggingface.co/spaces/*", "https://*/hf.space/*"],
   "permissions": [
     "storage",
-    "activeTab"]
+    "activeTab"
+  ]
 }
