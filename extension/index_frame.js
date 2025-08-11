@@ -17,10 +17,14 @@ function init() {
   let cur_ratings = [];
 
 
+
   let gradio_app;
   let chat_ui_app;
   let openai_app;
   let claude_ai_app;
+  let gemini_app;
+  let mistral_app;
+  let poe_app;
   let app;
   let init_already = false;
 
@@ -97,7 +101,6 @@ function init() {
 
   });
 
-  // Let's find the openai-app element
     waitForElm("body > div.flex.h-full.w-full.flex-col").then((openai_app_from_storage) => {
       openai_app = openai_app_from_storage;
 
@@ -134,13 +137,6 @@ function init() {
 
     claude_ai_app = claude_ai_app_from_storage;
 
-      if (!claude_ai_app) {
-        console.log("Couldn't find claude-ai-app.");
-      } else {
-        shouldShare = true;
-        app = claude_ai_app;
-        console.log("claude-ai-app found!", claude_ai_app);
-      }
 
       if (!init_already || claude_ai_app) {
          init_already = true;
@@ -160,7 +156,6 @@ function init() {
 
     });
 
-    // Let's find the grok element
     waitForElm('body > div[class*="group/sidebar-wrapper"][class*="min-h-svh"][class*="bg-sidebar"]').then((grok_app_from_storage) => {
       grok_app = grok_app_from_storage;
       if (!grok_app) {
@@ -189,6 +184,91 @@ function init() {
         setInterval(addBadge, 50000);
       }
     });
+  
+    if (window.location.href.includes("gemini.google.com")) {
+      const style = document.createElement('style');
+      style.innerHTML = 'body { padding-top: 50px !important; }';
+      document.head.appendChild(style);
+      console.log("Gemini website detected");
+      gemini_app = document.body;
+      app = gemini_app;
+      shouldShare = true;
+
+      if (!init_already) {
+        init_already = true;
+        getUserInfoFromStorage();
+        handleDataUpdatesFromPopup();
+      }
+
+      getFromStorage("age_verified").then((age_verified_from_storage) => {
+        age_verified = age_verified_from_storage ?? false;
+        if (!age_verified) {
+          console.log("age not verified - adding need verification badge");
+          addNeedVerificationBadge();
+        } else {
+          addBadge();
+        }
+        setInterval(queryAndUpdateConversationsGemini, 7000);
+        setInterval(addBadge, 5000);
+      });
+    }
+
+    if (window.location.href.includes("chat.mistral.ai")) {
+      // Let's find the mistral-app element
+      waitForElm("main").then((mistral_app_from_storage) => {
+        mistral_app = mistral_app_from_storage;
+
+        if (!mistral_app) {
+          console.log("Couldn't find mistral-app.")
+        } else {
+          shouldShare = true;
+          app = mistral_app;
+          console.log("mistral-app found!", mistral_app);
+        }
+
+        if (!init_already || mistral_app) {
+          init_already = true;
+          getUserInfoFromStorage();
+          handleDataUpdatesFromPopup();
+        }
+
+        if (mistral_app) {
+          if (!age_verified) {
+            console.log("age not verified - adding need verification badge");
+            addNeedVerificationBadge();
+          } else {
+            addBadge();
+            setInterval(addBadge, 5000);
+          }
+          setInterval(queryAndUpdateConversationsMistral, 7000);
+        }
+      });
+    }
+
+    if (window.location.href.includes("poe.com")) {
+      console.log("Poe website detected");
+      poe_app = document.body;
+      app = poe_app;
+      shouldShare = true;
+
+      if (!init_already) {
+        init_already = true;
+        getUserInfoFromStorage();
+        handleDataUpdatesFromPopup();
+      }
+
+      getFromStorage("age_verified").then((age_verified_from_storage) => {
+        age_verified = age_verified_from_storage ?? false;
+        if (!age_verified) {
+          console.log("age not verified - adding need verification badge");
+          addNeedVerificationBadge();
+        } else {
+          addBadge();
+        }
+        setInterval(queryAndUpdateConversationsPoe, 7000);
+        setInterval(addBadge, 5000);
+      });
+    }
 
 
   // *********************************************** Functions ***********************************************
@@ -266,10 +346,10 @@ function init() {
       } else if (request.type === "termsOfUse" && app) {
         console.log("terms of use clicked");
         const floatingBadge = addTermsOfUse();
-        if (app.contains(floatingBadge)) {
+        if (document.body.contains(floatingBadge)) {
           console.log("floating badge already exists");
         } else {
-          app.appendChild(floatingBadge);
+          document.body.appendChild(floatingBadge);
           console.log("added floating badge");
         }
       // } else if (request.type === "publish") {
@@ -433,12 +513,17 @@ function init() {
       age_verified = ageVerificationCheckbox.checked;
       saveToStorage("age_verified", age_verified);
       if (age_verified) {
+        const verificationBadge = document.getElementById("shareLM-needs-verification-badge");
+        if (verificationBadge) {
+          verificationBadge.remove();
+        }
+        if (document.body.contains(floatingBadge)) {
+          document.body.removeChild(floatingBadge);
+        }
         addBadge();
+        setInterval(addBadge, 5000);
       } else {
         addNeedVerificationBadge();
-      }
-      if (app.contains(floatingBadge)) {
-        app.removeChild(floatingBadge);
       }
     });
 
@@ -450,7 +535,7 @@ function init() {
     // Close the floating badge when the close button is clicked
     const closeBadgeButton = floatingBadge.querySelector("#close-badge-button");
     closeBadgeButton.addEventListener("click", function () {
-      app.removeChild(floatingBadge);
+      document.body.removeChild(floatingBadge);
     });
 
     return floatingBadge;
@@ -470,8 +555,16 @@ function init() {
     const container = document.createElement("div");
     container.id = "shareLM-needs-verification-badge";
     container.style.background = "linear-gradient(to right, white, #E88F8F, white)";
-    container.style.width = "100%";
-    container.style.textAlign = "center";
+    container.style.width = "fit-content";
+    container.style.padding = "2px 20px";
+    container.style.borderRadius = "0 0 10px 10px";
+    container.style.left = "50%";
+    container.style.transform = "translateX(-50%)";
+    container.style.position = "fixed";
+    container.style.top = "0";
+    container.style.zIndex = "9999";
+    container.style.display = "flex";
+    container.style.alignItems = "center";
     container.style.fontFamily = "Source Sans Pro,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI," +
         "Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji"; // Fallback fonts included
     container.style.color = "black";
@@ -485,22 +578,22 @@ function init() {
     showBadgeButton.id = "terms-of-use-button";
     showBadgeButton.textContent = 'Terms of Use';
     showBadgeButton.classList.add('disable-sharing-button');
-    showBadgeButton.style.margin = "7px";
+    showBadgeButton.style.margin = "0 7px 0 20px";
     showBadgeButton.style.marginLeft = "20px";
     showBadgeButton.addEventListener("click", function () {
       console.log("clicked terms of use button");
-      if (app.contains(floatingBadge)) {
+      if (document.body.contains(floatingBadge)) {
         console.log("floating badge already exists");
       } else {
-        app.appendChild(floatingBadge);
+        document.body.appendChild(floatingBadge);
         console.log("added floating badge");
       }
     });
 
     container.appendChild(showBadgeButton);
 
-    // Add the need-verification badge to the top of the iframe
-    app.insertAdjacentElement("beforebegin", container);
+    // Add the need-verification badge to the top of the page
+    document.body.insertBefore(container, document.body.firstChild);
   }
 
 
@@ -532,8 +625,16 @@ function init() {
       container.id = "shareLM-badge";
       container.style.color = "black";
       container.style.background = "linear-gradient(to right, white,  #Bde8b7, white)";
-      container.style.width = "100%";
-      container.style.textAlign = "center";
+      container.style.width = "fit-content";
+      container.style.padding = "2px 20px";
+      container.style.borderRadius = "0 0 10px 10px";
+      container.style.left = "50%";
+      container.style.transform = "translateX(-50%)";
+      container.style.position = "fixed";
+      container.style.top = "0";
+      container.style.zIndex = "9999";
+      container.style.display = "flex";
+      container.style.alignItems = "center";
       container.style.fontFamily = "Source Sans Pro,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI," +
           "Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji"; // Fallback fonts included
       container.textContent = 'Your conversation is shared with the community! 💬';
@@ -543,8 +644,10 @@ function init() {
       button.classList.add('disable-sharing-button');
       button.style.fontFamily = "Source Sans Pro,ui-ssans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI," +
           "Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji"; // Fallback fonts included
-      button.style.margin = "7px";
+      button.style.margin = "0 7px 0 20px";
       button.style.marginLeft = "20px";
+      button.style.background = "transparent"; 
+      button.style.border = "1px solid black";
 
       if (!shouldShare) {
         container.textContent = 'Your conversation is not shared with the community ☹️';
@@ -595,27 +698,31 @@ function init() {
 
       container.appendChild(button);
       if (!document.getElementById("shareLM-badge")) {
-      if (!app.insertAdjacentElement("beforebegin", container)) {
-        console.log("badge failed to add");
-        if (!app.parentNode) {
-          console.log("app has no parent node - insertAdjacentElement won't work");
-          // look again for the app element
-          if (openai_app) {
-            app = document.querySelector("body > div.flex.h-full.w-full.flex-col");
-          } else if (claude_ai_app) {
-            app = document.querySelector("body > div.flex.min-h-screen.w-full");
-          }
-          if (app) {
-            console.log("app found again");
-            if (!document.getElementById("shareLM-badge")) {
-              if (!app.insertAdjacentElement("beforebegin", container)) {
-                console.log("badge failed to add again");
+        if (!app.insertAdjacentElement("beforebegin", container)) {
+          console.log("badge failed to add");
+          if (!app.parentNode) {
+            console.log("app has no parent node - insertAdjacentElement won't work");
+            // look again for the app element
+            if (openai_app) {
+              app = document.querySelector("body > div.flex.h-full.w-full.flex-col");
+            } else if (claude_ai_app) {
+              app = document.querySelector("body > div.flex.min-h-screen.w-full");
+            } else if (gemini_app) {
+              app = document.body;
+            } else if (mistral_app) {
+                app = document.querySelector("main");
+            }
+            if (app) {
+              console.log("app found again");
+              if (!document.getElementById("shareLM-badge")) {
+                if (!app.insertAdjacentElement("beforebegin", container)) {
+                  console.log("badge failed to add again");
+                }
               }
             }
           }
         }
       }
-    }
     });
   }
 
@@ -688,7 +795,8 @@ function init() {
   // Function to save the conversation to local storage
   function saveCurConversationToLocalStorage() {
     console.log("saving conversation to local storage...");
-    if (cur_conversation_id === 0) {
+    if (cur_conversation_id 
+        0) {
       cur_conversation_id = uuidv4();
     }
     const data_short = {
@@ -794,15 +902,36 @@ function init() {
       });
     })
 
+  function queryAndUpdateConversationsGemini() {
+    queryAndUpdateConversations(
+        "div.query-text",
+        "div.markdown-main-panel"
+    );
+  }
+
+  function queryAndUpdateConversationsMistral() {
+    queryAndUpdateConversations(
+        '[data-message-author-role="user"] .select-text',
+        '[data-message-author-role="assistant"] [data-message-part-type="answer"]'
+    );
+  }
+
+  function queryAndUpdateConversationsPoe() {
+    queryAndUpdateConversations(
+        ".Prose_presets_theme-on-accent__rESxX",
+        ".Prose_presets_theme-hi-contrast__LQyM9"
+
+    );
   }
 
 
   function queryAndUpdateConversations(user_selector, bot_selector, sub_user_selector, sub_bot_selector) {
     if (!shouldShare || !age_verified) {
-      console.log("Sharing is disables, not updating conversation");
+      console.log("Sharing is disabled, not updating conversation");
       return;
     }
-    // Get the messages
+
+    // Get the messages using CSS selectors
     waitForElms(user_selector).then((user) => {
       const new_user_msgs = [];
       for (let i = 0; i < user.length; i++) {
@@ -967,7 +1096,6 @@ function getFromStorage(field) {
   });
   return promise;
 }
-
 
 
 

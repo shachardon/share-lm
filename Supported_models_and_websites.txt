@@ -1,0 +1,6 @@
+Claude
+HuggingFace through Gradio UI (HuggingFace Chat UI)
+ChatGPT
+Gemini
+MistralAI Le Chat
+Poe
