@@ -795,8 +795,7 @@ function init() {
   // Function to save the conversation to local storage
   function saveCurConversationToLocalStorage() {
     console.log("saving conversation to local storage...");
-    if (cur_conversation_id 
-        0) {
+    if (cur_conversation_id) {
       cur_conversation_id = uuidv4();
     }
     const data_short = {
@@ -863,11 +862,7 @@ function init() {
       "[class=\"response-content-markdown markdown [&_a:not(.not-prose)]:text-current [&_a:not(.not-prose):hover]:text-primary [&_a:not(.not-prose):hover]:decoration-primary [&_a:not(.not-prose)]:underline [&_a:not(.not-prose)]:decoration-primary/30 [&_a:not(.not-prose)]:underline-offset-2 [&_h2:not(.not-prose):first-child]:mt-0 [&_h3:not(.not-prose):first-child]:mt-0 [&_h4:not(.not-prose):first-child]:mt-0\"]",
       "[class=\"response-content-markdown markdown [&_a:not(.not-prose)]:text-current [&_a:not(.not-prose):hover]:text-primary [&_a:not(.not-prose):hover]:decoration-primary [&_a:not(.not-prose)]:underline [&_a:not(.not-prose)]:decoration-primary/30 [&_a:not(.not-prose)]:underline-offset-2\"]"
     ]
-    //queryAndUpdateConversations(
-    //  "[class=\"relative group flex flex-col justify-center w-full max-w-[var(--content-max-width)] pb-0.5 items-end\"]",
-    //  "[class=\"response-content-markdown markdown [&_a:not(.not-prose)]:text-current [&_a:not(.not-prose):hover]:text-primary [&_a:not(.not-prose):hover]:decoration-primary [&_a:not(.not-prose)]:underline [&_a:not(.not-prose)]:decoration-primary/30 [&_a:not(.not-prose)]:underline-offset-2 [&_h2:not(.not-prose):first-child]:mt-0 [&_h3:not(.not-prose):first-child]:mt-0 [&_h4:not(.not-prose):first-child]:mt-0\"]"
-    //);
-    //independent from other models
+    const sub_bot_selector_combined = sub_bot_selector.join(",");
     if (!shouldShare || !age_verified) {
       console.log("Sharing is disables, not updating conversation");
       return;
@@ -883,12 +878,8 @@ function init() {
         const new_bot_msgs = [];
         for (let i = 0; i < bot.length; i++) {
           let sub_bot_concat = "";
-          // Support array of selectors
-          let sub_bot_elements = [];
-          sub_bot_selector.forEach(sel => {
-            sub_bot_elements = sub_bot_elements.concat(Array.from(bot[i].querySelectorAll(sel)));
-          });
-          console.log("sub_bot_elements:", sub_bot_elements);
+          // Get all matching elements in DOM order
+          let sub_bot_elements = Array.from(bot[i].querySelectorAll(sub_bot_selector_combined));
           sub_bot_elements.forEach(el => {
             sub_bot_concat += el.textContent;
           });
@@ -900,7 +891,8 @@ function init() {
           checkInConversation(new_bot_msgs, new_user_msgs, new_ratings);
         });
       });
-    })
+    });
+  }
 
   function queryAndUpdateConversationsGemini() {
     queryAndUpdateConversations(
