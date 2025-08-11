@@ -381,18 +381,51 @@ document.addEventListener('DOMContentLoaded', function() {
     const publishButton = document.getElementById("publishButton");
     console.log("publishButton", publishButton);
     publishButton.addEventListener("click", function () {
+      const tableBody = document.querySelector("#saved-conversations-table tbody");
+      if (!tableBody.firstChild) {
+        // Show toast for empty case
+        const toast = document.createElement("div");
+        toast.textContent = "Nothing to publish";
+        toast.style.position = "fixed";
+        toast.style.bottom = "20px";
+        toast.style.left = "50%";
+        toast.style.transform = "translateX(-50%)";
+        toast.style.backgroundColor = "#333";
+        toast.style.color = "#fff";
+        toast.style.padding = "10px 20px";
+        toast.style.borderRadius = "5px";
+        toast.style.zIndex = "1000";
+        document.body.appendChild(toast);
+        setTimeout(() => document.body.removeChild(toast), 3000);
+        return; // Exit early
+      }
+
       console.log("publishing...");
-      chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
-        chrome.runtime.sendMessage({type: 'publish'}, function (response) {
+      chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+        chrome.runtime.sendMessage({ type: 'publish' }, function (response) {
           if (chrome.runtime.lastError) {
             // console.log("error sending publish message to content script");
           }
         });
       });
-      const tableBody = document.querySelector("#saved-conversations-table tbody");
+
       while (tableBody.firstChild) {
         tableBody.removeChild(tableBody.firstChild);
       }
+
+      const toast = document.createElement("div");
+      toast.textContent = "Published!🎉";
+      toast.style.position = "fixed";
+      toast.style.bottom = "20px";
+      toast.style.left = "50%";
+      toast.style.transform = "translateX(-50%)";
+      toast.style.backgroundColor = "#333";
+      toast.style.color = "#fff";
+      toast.style.padding = "10px 20px";
+      toast.style.borderRadius = "5px";
+      toast.style.zIndex = "1000";
+      document.body.appendChild(toast);
+      setTimeout(() => document.body.removeChild(toast), 3000);
     });
   }
 
