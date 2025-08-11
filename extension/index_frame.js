@@ -26,6 +26,7 @@ function init() {
   let gemini_app;
   let mistral_app;
   let poe_app;
+  let perplexity_app;
   let app;
   let init_already = false;
 
@@ -276,6 +277,31 @@ function init() {
           addBadge();
         }
         setInterval(queryAndUpdateConversationsPoe, 7000);
+        setInterval(addBadge, 5000);
+      });
+    }
+
+    if (window.location.href.includes("perplexity.ai")) {
+      console.log("Perplexity website detected");
+      perplexity_app = document.body;
+      app = perplexity_app;
+      shouldShare = true;
+
+      if (!init_already) {
+        init_already = true;
+        getUserInfoFromStorage();
+        handleDataUpdatesFromPopup();
+      }
+
+      getFromStorage("age_verified").then((age_verified_from_storage) => {
+        age_verified = age_verified_from_storage ?? false;
+        if (!age_verified) {
+          console.log("age not verified - adding need verification badge");
+          addNeedVerificationBadge();
+        } else {
+          addBadge();
+        }
+        setInterval(queryAndUpdateConversationsPerplexity, 7000);
         setInterval(addBadge, 5000);
       });
     }
@@ -931,6 +957,13 @@ function init() {
         ".Prose_presets_theme-on-accent__rESxX",
         ".Prose_presets_theme-hi-contrast__LQyM9"
 
+    );
+  }
+
+  function queryAndUpdateConversationsPerplexity() {
+    queryAndUpdateConversations(
+        "h1.font-display",
+        "div.prose"
     );
   }
 

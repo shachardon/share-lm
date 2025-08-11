@@ -4,3 +4,4 @@ ChatGPT
 Gemini
 MistralAI Le Chat
 Poe
+Perplexity
