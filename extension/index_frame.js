@@ -22,6 +22,7 @@ function init() {
   let chat_ui_app;
   let openai_app;
   let claude_ai_app;
+  let grok_app;
   let gemini_app;
   let mistral_app;
   let poe_app;
@@ -101,6 +102,7 @@ function init() {
 
   });
 
+  // Let's find the openai-app element
     waitForElm("body > div.flex.h-full.w-full.flex-col").then((openai_app_from_storage) => {
       openai_app = openai_app_from_storage;
 
@@ -135,8 +137,15 @@ function init() {
     // waitForElm("[class=\"from-bg-200 to-bg-100 text-text-100 font-styrene min-h-screen bg-gradient-to-b bg-fixed tracking-tight\"]").then((claude_ai_app_from_storage) => {
     // waitForElm("[data-theme=\"claude\"]").then((claude_ai_app_from_storage) => {
 
-    claude_ai_app = claude_ai_app_from_storage;
+      claude_ai_app = claude_ai_app_from_storage;
 
+      if (!claude_ai_app) {
+        console.log("Couldn't find claude-ai-app.");
+      } else {
+        shouldShare = true;
+        app = claude_ai_app;
+        console.log("claude-ai-app found!", claude_ai_app);
+      }
 
       if (!init_already || claude_ai_app) {
          init_already = true;
@@ -156,6 +165,7 @@ function init() {
 
     });
 
+  // Let's find the grok-app element
     waitForElm('body > div[class*="group/sidebar-wrapper"][class*="min-h-svh"][class*="bg-sidebar"]').then((grok_app_from_storage) => {
       grok_app = grok_app_from_storage;
       if (!grok_app) {
@@ -795,8 +805,7 @@ function init() {
   // Function to save the conversation to local storage
   function saveCurConversationToLocalStorage() {
     console.log("saving conversation to local storage...");
-    if (cur_conversation_id 
-        0) {
+    if (cur_conversation_id === 0) {
       cur_conversation_id = uuidv4();
     }
     const data_short = {
@@ -857,8 +866,8 @@ function init() {
     //user : class= "relative group flex flex-col justify-center w-full max-w-[var(--content-max-width)] pb-0.5 items-end"
     //bot : class="message-bubble rounded-3xl text-primary min-h-7 prose dark:prose-invert break-words prose-p:opacity-100 prose-strong:opacity-100 prose-li:opacity-100 prose-ul:opacity-100 prose-ol:opacity-100 prose-ul:my-1 prose-ol:my-1 prose-li:my-2 last:prose-li:mb-3 prose-li:ps-1 prose-li:ms-1 w-full max-w-none"
     //sub_bots : 
-        // -- class="response-content-markdown markdown [&_a:not(.not-prose)]:text-current [&_a:not(.not-prose):hover]:text-primary [&_a:not(.not-prose):hover]:decoration-primary [&_a:not(.not-prose)]:underline [&_a:not(.not-prose)]:decoration-primary/30 [&_a:not(.not-prose)]:underline-offset-2 [&_h2:not(.not-prose):first-child]:mt-0 [&_h3:not(.not-prose):first-child]:mt-0 [&_h4:not(.not-prose):first-child]:mt-0"
-        // -- class="response-content-markdown markdown [&_a:not(.not-prose)]:text-current [&_a:not(.not-prose):hover]:text-primary [&_a:not(.not-prose):hover]:decoration-primary [&_a:not(.not-prose)]:underline [&_a:not(.not-prose)]:decoration-primary/30 [&_a:not(.not-prose)]:underline-offset-2"
+    // -- class="response-content-markdown markdown [&_a:not(.not-prose)]:text-current [&_a:not(.not-prose):hover]:text-primary [&_a:not(.not-prose):hover]:decoration-primary [&_a:not(.not-prose)]:underline [&_a:not(.not-prose)]:decoration-primary/30 [&_a:not(.not-prose)]:underline-offset-2 [&_h2:not(.not-prose):first-child]:mt-0 [&_h3:not(.not-prose):first-child]:mt-0 [&_h4:not(.not-prose):first-child]:mt-0"
+    // -- class="response-content-markdown markdown [&_a:not(.not-prose)]:text-current [&_a:not(.not-prose):hover]:text-primary [&_a:not(.not-prose):hover]:decoration-primary [&_a:not(.not-prose)]:underline [&_a:not(.not-prose)]:decoration-primary/30 [&_a:not(.not-prose)]:underline-offset-2"
     sub_bot_selector = [
       "[class=\"response-content-markdown markdown [&_a:not(.not-prose)]:text-current [&_a:not(.not-prose):hover]:text-primary [&_a:not(.not-prose):hover]:decoration-primary [&_a:not(.not-prose)]:underline [&_a:not(.not-prose)]:decoration-primary/30 [&_a:not(.not-prose)]:underline-offset-2 [&_h2:not(.not-prose):first-child]:mt-0 [&_h3:not(.not-prose):first-child]:mt-0 [&_h4:not(.not-prose):first-child]:mt-0\"]",
       "[class=\"response-content-markdown markdown [&_a:not(.not-prose)]:text-current [&_a:not(.not-prose):hover]:text-primary [&_a:not(.not-prose):hover]:decoration-primary [&_a:not(.not-prose)]:underline [&_a:not(.not-prose)]:decoration-primary/30 [&_a:not(.not-prose)]:underline-offset-2\"]"
@@ -901,6 +910,7 @@ function init() {
         });
       });
     })
+  }
 
   function queryAndUpdateConversationsGemini() {
     queryAndUpdateConversations(
