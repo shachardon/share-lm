@@ -101,7 +101,6 @@ function init() {
 
   });
 
-  // Let's find the openai-app element
     waitForElm("body > div.flex.h-full.w-full.flex-col").then((openai_app_from_storage) => {
       openai_app = openai_app_from_storage;
 
@@ -138,13 +137,6 @@ function init() {
 
     claude_ai_app = claude_ai_app_from_storage;
 
-      if (!claude_ai_app) {
-        console.log("Couldn't find claude-ai-app.");
-      } else {
-        shouldShare = true;
-        app = claude_ai_app;
-        console.log("claude-ai-app found!", claude_ai_app);
-      }
 
       if (!init_already || claude_ai_app) {
          init_already = true;
@@ -164,6 +156,35 @@ function init() {
 
     });
 
+    waitForElm('body > div[class*="group/sidebar-wrapper"][class*="min-h-svh"][class*="bg-sidebar"]').then((grok_app_from_storage) => {
+      grok_app = grok_app_from_storage;
+      if (!grok_app) {
+        console.log("Couldn't find grok-app.");
+      } else {
+        shouldShare = true;
+        app = grok_app;
+        console.log("grok-app found!", grok_app);
+      }
+
+      if (!init_already || grok_app) {
+        init_already = true;
+        getUserInfoFromStorage();
+        handleDataUpdatesFromPopup();
+      }
+
+      if (grok_app) {
+        if (!age_verified) {
+          console.log("age not verified - adding need verification badge");
+          addNeedVerificationBadge();
+        } else {
+          addBadge();
+        }
+        // You may need to implement queryAndUpdateConversationsGrok if needed
+        setInterval(queryAndUpdateConversationsGrok, 7000);
+        setInterval(addBadge, 50000);
+      }
+    });
+  
     if (window.location.href.includes("gemini.google.com")) {
       const style = document.createElement('style');
       style.innerHTML = 'body { padding-top: 50px !important; }';
@@ -774,7 +795,8 @@ function init() {
   // Function to save the conversation to local storage
   function saveCurConversationToLocalStorage() {
     console.log("saving conversation to local storage...");
-    if (cur_conversation_id === 0) {
+    if (cur_conversation_id 
+        0) {
       cur_conversation_id = uuidv4();
     }
     const data_short = {
@@ -830,6 +852,55 @@ function init() {
     queryAndUpdateConversations("[data-testid=\"user-message\"]",
         ".font-claude-message");//,
   }
+
+  function queryAndUpdateConversationsGrok() {
+    //user : class= "relative group flex flex-col justify-center w-full max-w-[var(--content-max-width)] pb-0.5 items-end"
+    //bot : class="message-bubble rounded-3xl text-primary min-h-7 prose dark:prose-invert break-words prose-p:opacity-100 prose-strong:opacity-100 prose-li:opacity-100 prose-ul:opacity-100 prose-ol:opacity-100 prose-ul:my-1 prose-ol:my-1 prose-li:my-2 last:prose-li:mb-3 prose-li:ps-1 prose-li:ms-1 w-full max-w-none"
+    //sub_bots : 
+        // -- class="response-content-markdown markdown [&_a:not(.not-prose)]:text-current [&_a:not(.not-prose):hover]:text-primary [&_a:not(.not-prose):hover]:decoration-primary [&_a:not(.not-prose)]:underline [&_a:not(.not-prose)]:decoration-primary/30 [&_a:not(.not-prose)]:underline-offset-2 [&_h2:not(.not-prose):first-child]:mt-0 [&_h3:not(.not-prose):first-child]:mt-0 [&_h4:not(.not-prose):first-child]:mt-0"
+        // -- class="response-content-markdown markdown [&_a:not(.not-prose)]:text-current [&_a:not(.not-prose):hover]:text-primary [&_a:not(.not-prose):hover]:decoration-primary [&_a:not(.not-prose)]:underline [&_a:not(.not-prose)]:decoration-primary/30 [&_a:not(.not-prose)]:underline-offset-2"
+    sub_bot_selector = [
+      "[class=\"response-content-markdown markdown [&_a:not(.not-prose)]:text-current [&_a:not(.not-prose):hover]:text-primary [&_a:not(.not-prose):hover]:decoration-primary [&_a:not(.not-prose)]:underline [&_a:not(.not-prose)]:decoration-primary/30 [&_a:not(.not-prose)]:underline-offset-2 [&_h2:not(.not-prose):first-child]:mt-0 [&_h3:not(.not-prose):first-child]:mt-0 [&_h4:not(.not-prose):first-child]:mt-0\"]",
+      "[class=\"response-content-markdown markdown [&_a:not(.not-prose)]:text-current [&_a:not(.not-prose):hover]:text-primary [&_a:not(.not-prose):hover]:decoration-primary [&_a:not(.not-prose)]:underline [&_a:not(.not-prose)]:decoration-primary/30 [&_a:not(.not-prose)]:underline-offset-2\"]"
+    ]
+    //queryAndUpdateConversations(
+    //  "[class=\"relative group flex flex-col justify-center w-full max-w-[var(--content-max-width)] pb-0.5 items-end\"]",
+    //  "[class=\"response-content-markdown markdown [&_a:not(.not-prose)]:text-current [&_a:not(.not-prose):hover]:text-primary [&_a:not(.not-prose):hover]:decoration-primary [&_a:not(.not-prose)]:underline [&_a:not(.not-prose)]:decoration-primary/30 [&_a:not(.not-prose)]:underline-offset-2 [&_h2:not(.not-prose):first-child]:mt-0 [&_h3:not(.not-prose):first-child]:mt-0 [&_h4:not(.not-prose):first-child]:mt-0\"]"
+    //);
+    //independent from other models
+    if (!shouldShare || !age_verified) {
+      console.log("Sharing is disables, not updating conversation");
+      return;
+    }
+    waitForElms("[class=\"relative group flex flex-col justify-center w-full max-w-[var(--content-max-width)] pb-0.5 items-end\"]").then((user) => {
+      const new_user_msgs = [];
+      for (let i = 0; i < user.length; i++) {
+        new_user_msgs.push(user[i].textContent);
+      }
+      waitForElms("[class=\"message-bubble rounded-3xl text-primary min-h-7 prose dark:prose-invert break-words prose-p:opacity-100 prose-strong:opacity-100 prose-li:opacity-100 prose-ul:opacity-100 prose-ol:opacity-100 prose-ul:my-1 prose-ol:my-1 prose-li:my-2 last:prose-li:mb-3 prose-li:ps-1 prose-li:ms-1 w-full max-w-none\"]").then((bot) => {
+        //extract elements that match one of sub_bot selectors
+        console.log("bot messages found", bot);
+        const new_bot_msgs = [];
+        for (let i = 0; i < bot.length; i++) {
+          let sub_bot_concat = "";
+          // Support array of selectors
+          let sub_bot_elements = [];
+          sub_bot_selector.forEach(sel => {
+            sub_bot_elements = sub_bot_elements.concat(Array.from(bot[i].querySelectorAll(sel)));
+          });
+          console.log("sub_bot_elements:", sub_bot_elements);
+          sub_bot_elements.forEach(el => {
+            sub_bot_concat += el.textContent;
+          });
+          new_bot_msgs.push(sub_bot_concat);
+        }
+        console.log("new_bot_msgs:", new_bot_msgs);
+        queryAndUpdateRating(new_bot_msgs.length).then((new_ratings) => {
+          // Check if the conversation has changed, if so, send it to the server
+          checkInConversation(new_bot_msgs, new_user_msgs, new_ratings);
+        });
+      });
+    })
 
   function queryAndUpdateConversationsGemini() {
     queryAndUpdateConversations(
