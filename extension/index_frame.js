@@ -962,7 +962,7 @@ function init() {
 
   function queryAndUpdateConversationsPerplexity() {
     queryAndUpdateConversations(
-        "h1.font-display",
+        ".font-display.text-pretty",
         "div.prose"
     );
   }
