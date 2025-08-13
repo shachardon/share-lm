@@ -1,6 +1,7 @@
 Claude
 HuggingFace through Gradio UI (HuggingFace Chat UI)
 ChatGPT
+Copilot
 Gemini
 MistralAI Le Chat
 Poe

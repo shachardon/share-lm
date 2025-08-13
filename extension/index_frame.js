@@ -26,6 +26,7 @@ function init() {
   let gemini_app;
   let mistral_app;
   let poe_app;
+  let copilot_app;
   let app;
   let init_already = false;
 
@@ -220,6 +221,38 @@ function init() {
         }
         setInterval(queryAndUpdateConversationsGemini, 7000);
         setInterval(addBadge, 5000);
+      });
+    }
+
+    if (window.location.href.includes("copilot.microsoft.com")) {
+      // Let's find the copilot-app element
+      waitForElm("cib-serp-main").then((copilot_app_from_storage) => {
+        copilot_app = copilot_app_from_storage;
+
+        if (!copilot_app) {
+          console.log("Couldn't find copilot-app.")
+        } else {
+          shouldShare = true;
+          app = copilot_app;
+          console.log("copilot-app found!", copilot_app);
+        }
+
+        if (!init_already || copilot_app) {
+          init_already = true;
+          getUserInfoFromStorage();
+          handleDataUpdatesFromPopup();
+        }
+
+        if (copilot_app) {
+          if (!age_verified) {
+            console.log("age not verified - adding need verification badge");
+            addNeedVerificationBadge();
+          } else {
+            addBadge();
+            setInterval(addBadge, 5000);
+          }
+          setInterval(queryAndUpdateConversationsCopilot, 7000);
+        }
       });
     }
 
@@ -931,6 +964,13 @@ function init() {
         ".Prose_presets_theme-on-accent__rESxX",
         ".Prose_presets_theme-hi-contrast__LQyM9"
 
+    );
+  }
+
+  function queryAndUpdateConversationsCopilot() {
+    queryAndUpdateConversations(
+        "cib-message-group.user .ac-text-block",
+        "cib-message-group:not(.user) .ac-text-block"
     );
   }
 
