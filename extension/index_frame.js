@@ -859,7 +859,7 @@ function init() {
 
   function queryAndUpdateConversationsClaudeAI() {
     queryAndUpdateConversations("[data-testid=\"user-message\"]",
-        ".font-claude-message");//,
+        ".font-claude-response.relative");//,
   }
 
   function queryAndUpdateConversationsGrok() {
