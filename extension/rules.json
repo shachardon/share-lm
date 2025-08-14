@@ -1,0 +1,19 @@
+[
+  {
+    "id": "csp_remove_rule",
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        {
+          "header": "Content-Security-Policy",
+          "operation": "remove"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||copilot.microsoft.com",
+      "resourceTypes": ["main_frame", "sub_frame"]
+    }
+  }
+]
