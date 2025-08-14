@@ -5,3 +5,5 @@ Copilot
 Gemini
 MistralAI Le Chat
 Poe
+Perplexity
+grok

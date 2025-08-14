@@ -27,6 +27,7 @@ function init() {
   let mistral_app;
   let poe_app;
   let copilot_app;
+  let perplexity_app;
   let app;
   let init_already = false;
 
@@ -310,6 +311,31 @@ function init() {
           addBadge();
         }
         setInterval(queryAndUpdateConversationsPoe, 7000);
+        setInterval(addBadge, 5000);
+      });
+    }
+
+    if (window.location.href.includes("perplexity.ai")) {
+      console.log("Perplexity website detected");
+      perplexity_app = document.body;
+      app = perplexity_app;
+      shouldShare = true;
+
+      if (!init_already) {
+        init_already = true;
+        getUserInfoFromStorage();
+        handleDataUpdatesFromPopup();
+      }
+
+      getFromStorage("age_verified").then((age_verified_from_storage) => {
+        age_verified = age_verified_from_storage ?? false;
+        if (!age_verified) {
+          console.log("age not verified - adding need verification badge");
+          addNeedVerificationBadge();
+        } else {
+          addBadge();
+        }
+        setInterval(queryAndUpdateConversationsPerplexity, 7000);
         setInterval(addBadge, 5000);
       });
     }
@@ -893,7 +919,7 @@ function init() {
 
   function queryAndUpdateConversationsClaudeAI() {
     queryAndUpdateConversations("[data-testid=\"user-message\"]",
-        ".font-claude-message");//,
+        ".font-claude-response.relative");//,
   }
 
   function queryAndUpdateConversationsGrok() {
@@ -972,6 +998,13 @@ function init() {
     queryAndUpdateConversations(
         '[data-content="user-message"]',
         '[data-content="ai-message"] p'
+    );
+  }
+
+  function queryAndUpdateConversationsPerplexity() {
+    queryAndUpdateConversations(
+        ".font-display.text-pretty",
+        "div.prose"
     );
   }
 
