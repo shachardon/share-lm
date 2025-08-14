@@ -1,0 +1,41 @@
+{
+  "name": "ShareLM: Share your chat conversations",
+  "description": "Easily contribute your human-models conversations, to create an ever-growing dataset for the benefit of the open-source community!",
+  "version": "0.0.2.1",
+  "manifest_version": 2,
+  "icons": {
+    "16": "assets/icons/icon16.png",
+    "32": "assets/icons/icon32.png",
+    "48": "assets/icons/icon48.png",
+    "128": "assets/icons/icon128.png"
+  },
+  "browser_action": {
+    "default_icon": {
+      "16": "assets/icons/icon16.png",
+      "32": "assets/icons/icon32.png",
+      "48": "assets/icons/icon48.png",
+      "128": "assets/icons/icon128.png"
+    },
+    "default_title": "Login to ShareLM",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["index_frame.js"],
+      "all_frames": true,
+      "run_at": "document_end",
+      "css": ["index_frame.css"]
+    }
+  ],
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "permissions": [
+    "storage",
+    "activeTab",
+    "https://huggingface.co/spaces/*",
+    "https://*/hf.space/*",
+    "https://grok.com/*"
+  ]
+}
