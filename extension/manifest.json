@@ -31,7 +31,7 @@
   "background": {
     "service_worker": "background.js"
   },
-  "host_permissions": ["https://huggingface.co/spaces/*", "https://*/hf.space/*", "https://grok.com/*", "https://copilot.microsoft.com/*"],
+  "host_permissions": ["https://huggingface.co/spaces/*", "https://*/hf.space/*", "https://grok.com/*"],
   "permissions": [
     "storage",
     "activeTab",
