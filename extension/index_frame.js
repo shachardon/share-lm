@@ -880,12 +880,12 @@ function init() {
   function queryAndUpdateConversationsOpenAI() {
     queryAndUpdateConversations(
         "[data-message-author-role=\"user\"]",
-        "[data-message-author-role=\"assistant\"]");//,
+        "[data-message-author-role=\"assistant\"]", sub_user_selector="",sub_bot_selector="", model="chatgpt");//,
   }
 
   function queryAndUpdateConversationsClaudeAI() {
     queryAndUpdateConversations("[data-testid=\"user-message\"]",
-        ".font-claude-response.relative");//,
+        ".font-claude-response.relative", sub_user_selector="",sub_bot_selector="", model="claude");//,
   }
 
   function queryAndUpdateConversationsGrok() {
@@ -941,34 +941,52 @@ function init() {
   function queryAndUpdateConversationsGemini() {
     queryAndUpdateConversations(
         "div.query-text",
-        "div.markdown-main-panel"
+        "div.markdown-main-panel", sub_user_selector="",sub_bot_selector="", model=""
     );
   }
 
   function queryAndUpdateConversationsMistral() {
     queryAndUpdateConversations(
         '[data-message-author-role="user"] .select-text',
-        '[data-message-author-role="assistant"] [data-message-part-type="answer"]'
+        '[data-message-author-role="assistant"] [data-message-part-type="answer"]',
+        sub_user_selector="",sub_bot_selector="", model=""
     );
   }
 
   function queryAndUpdateConversationsPoe() {
     queryAndUpdateConversations(
         ".Prose_presets_theme-on-accent__rESxX",
-        ".Prose_presets_theme-hi-contrast__LQyM9"
-
+        ".Prose_presets_theme-hi-contrast__LQyM9",
+        sub_user_selector="",sub_bot_selector="", model=""
     );
   }
 
   function queryAndUpdateConversationsPerplexity() {
     queryAndUpdateConversations(
         ".font-display.text-pretty",
-        "div.prose"
+        "div.prose",
+        sub_user_selector="",sub_bot_selector="", model=""
     );
   }
 
+  function getBotLinkFromMessageChatGPT(bot) {
+    // from bot object look for span class="max-w-full grow truncate overflow-hidden text-center"
+    // select all of span class="max-w-full grow truncate overflow-hidden text-center"
+    var linkElements = bot.querySelectorAll('span.max-w-full.grow.truncate.overflow-hidden.text-center');
+    var parentElements = [];
+    for (let i = 0; i < linkElements.length; i++) {
+      const linkElement = linkElements[i];
+      // get parent until it is an a tag
+      var parentElement = linkElement ? linkElement.parentElement : null;
+      while (parentElement && parentElement.tagName !== "A") {
+        parentElement = parentElement.parentElement;
+      }
+      parentElements.push(parentElement);
+    }
+    return [linkElements, parentElements];
+  }
 
-  function queryAndUpdateConversations(user_selector, bot_selector, sub_user_selector, sub_bot_selector) {
+  function queryAndUpdateConversations(user_selector, bot_selector, sub_user_selector="", sub_bot_selector="", model) {
     if (!shouldShare || !age_verified) {
       console.log("Sharing is disabled, not updating conversation");
       return;
@@ -988,7 +1006,7 @@ function init() {
         }
       }
       waitForElms(bot_selector).then((bot) => {
-        console.log("bot messages found");
+        console.log("bot messages found")
         console.log(bot);
         const new_bot_msgs = [];
         for (let i = 0; i < bot.length; i++) {
@@ -1001,7 +1019,31 @@ function init() {
                 }
               new_bot_msgs.push(sub_bot.textContent);
             }
-          } else {
+          } 
+          else if (model === 'chatgpt') {
+              const [text_content, href_of_text] = getBotLinkFromMessageChatGPT(bot[i]);
+              let botTextContent = bot[i].textContent;
+              let next_index = 0;
+              if (href_of_text.length > 0) {
+                for(let j = 0; j < href_of_text.length; j++) {
+                let start_index = botTextContent.indexOf(text_content[j].textContent, next_index);
+                let end_index = start_index + text_content[j].textContent.length;
+                botTextContent = botTextContent.substring(0, start_index) + href_of_text[j].href + " " + botTextContent.substring(end_index);
+                next_index = (botTextContent.substring(0, start_index) + href_of_text[j].href + " ").length;
+              }
+              // GETTING LINK FOR CHATGPT PART
+              console.log(botTextContent)
+              new_bot_msgs.push(botTextContent);
+              }
+          }
+          else if (model === 'claude') {
+            // Handle other models
+            // currently default functionality
+            new_bot_msgs.push(bot[i].textContent);
+          }
+          else {
+            // Handle other models
+            // currently default functionality
             new_bot_msgs.push(bot[i].textContent);
           }
         }
