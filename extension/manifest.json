@@ -34,6 +34,17 @@
   "host_permissions": ["https://huggingface.co/spaces/*", "https://*/hf.space/*", "https://grok.com/*", "https://copilot.microsoft.com/*"],
   "permissions": [
     "storage",
-    "activeTab"
-  ]
+    "activeTab",
+    "declarativeNetRequest",
+    "declarativeNetRequestWithHostAccess"
+  ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "ruleset_1",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
+  }
 }

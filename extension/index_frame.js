@@ -225,35 +225,36 @@ function init() {
     }
 
     if (window.location.href.includes("copilot.microsoft.com")) {
-      // Let's find the copilot-app element
-      waitForElm("cib-serp-main").then((copilot_app_from_storage) => {
-        copilot_app = copilot_app_from_storage;
+      console.log("Copilot website detected. Starting to look for #app element...");
+      const intervalId = setInterval(() => {
+        const copilot_app_from_dom = document.querySelector("#app");
+        if (copilot_app_from_dom) {
+          console.log("#app element found!");
+          clearInterval(intervalId); // Stop checking once found
 
-        if (!copilot_app) {
-          console.log("Couldn't find copilot-app.")
-        } else {
-          shouldShare = true;
+          copilot_app = copilot_app_from_dom;
           app = copilot_app;
-          console.log("copilot-app found!", copilot_app);
-        }
+          shouldShare = true;
 
-        if (!init_already || copilot_app) {
-          init_already = true;
-          getUserInfoFromStorage();
-          handleDataUpdatesFromPopup();
-        }
-
-        if (copilot_app) {
-          if (!age_verified) {
-            console.log("age not verified - adding need verification badge");
-            addNeedVerificationBadge();
-          } else {
-            addBadge();
-            setInterval(addBadge, 5000);
+          if (!init_already) {
+            init_already = true;
+            getUserInfoFromStorage();
+            handleDataUpdatesFromPopup();
           }
-          setInterval(queryAndUpdateConversationsCopilot, 7000);
+
+          getFromStorage("age_verified").then((age_verified_from_storage) => {
+            age_verified = age_verified_from_storage ?? false;
+            if (!age_verified) {
+              console.log("age not verified - adding need verification badge");
+              addNeedVerificationBadge();
+            } else {
+              addBadge();
+              setInterval(addBadge, 5000);
+            }
+            setInterval(queryAndUpdateConversationsCopilot, 7000);
+          });
         }
-      });
+      }, 1000); // Check every second
     }
 
     if (window.location.href.includes("chat.mistral.ai")) {
@@ -969,8 +970,8 @@ function init() {
 
   function queryAndUpdateConversationsCopilot() {
     queryAndUpdateConversations(
-        "cib-message-group.user .ac-text-block",
-        "cib-message-group:not(.user) .ac-text-block"
+        '[data-content="user-message"]',
+        '[data-content="ai-message"] p'
     );
   }
 
