@@ -877,9 +877,14 @@ function init() {
     //filters :
     // -- class="flex flex-row px-4 py-2 h-10 items-center rounded-t-xl bg-surface-l2 border border-border-l1"
     // -- class="sticky w-full right-2 z-10 @[1280px]/mainview:z-40 @[1280px]/mainview:top-10 top-24 @[0px]/preview:top-5 print:hidden"
+    // -- class="katex-html"
+    // -- class="katex-mathml -> <math> -> <semantic> -> <mrow>"
     sub_bot_filters = [
       "[class=\"flex flex-row px-4 py-2 h-10 items-center rounded-t-xl bg-surface-l2 border border-border-l1\"]",
-      "[class=\"sticky w-full right-2 z-10 @[1280px]/mainview:z-40 @[1280px]/mainview:top-10 top-24 @[0px]/preview:top-5 print:hidden\"]"
+      "[class=\"sticky w-full right-2 z-10 @[1280px]/mainview:z-40 @[1280px]/mainview:top-10 top-24 @[0px]/preview:top-5 print:hidden\"]",
+      "[class=\"katex-html\"]",
+      "[class=\"katex-mathml\"] > math > semantic > mrow",
+      "mrow"
     ]
     const sub_bot_filter_combined = sub_bot_filters.join(",");
     const sub_bot_selector_combined = sub_bot_selector.join(",");
