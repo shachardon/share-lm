@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "description": "ShareLM browser extension",
   "scripts": {
+    "build": "npm run build:chrome",
     "build:chrome": "cp extension/manifest-chrome.json extension/manifest.json && sed -i 's/chrome.browserAction/chrome.action/g' extension/background.js",
-    "build:firefox": "cp extension/manifest-firefox.json extension/manifest.json && sed -i 's/chrome.action/chrome.browserAction/g' extension/background.js"
+    "build:firefox": "cp extension/manifest-firefox.json extension/manifest.json && sed -i 's/chrome.action/chrome.browserAction/g' extension/background.js",
+    "postinstall": "npm run build"
   },
   "devDependencies": {}
 }
