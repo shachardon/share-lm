@@ -1011,6 +1011,7 @@ function init() {
         const new_bot_msgs = [];
         console.log(bot.length)
         for (let i = 0; i < bot.length; i++) {
+          console.log("looping ",i);
           if (sub_bot_selector) {
             const sub_bot = bot[i].querySelectorAll(sub_bot_selector);
             if (sub_bot) {
@@ -1022,20 +1023,29 @@ function init() {
             }
           } 
           else if (model === 'chatgpt') {
-              const [text_content, href_of_text] = getBotLinkFromMessageChatGPT(bot[i]);
-              let botTextContent = bot[i].textContent;
-              let next_index = 0;
-              if (href_of_text.length > 0) {
-                for(let j = 0; j < href_of_text.length; j++) {
-                  let start_index = botTextContent.indexOf(text_content[j].textContent, next_index);
-                  let end_index = start_index + text_content[j].textContent.length;
-                  botTextContent = botTextContent.substring(0, start_index) + href_of_text[j].href + " " + botTextContent.substring(end_index);
-                  next_index = (botTextContent.substring(0, start_index) + href_of_text[j].href + " ").length;
+            console.log("choosing Chatgpt loop ", i)
+            console.log(bot[i]);
+            const [text_content, href_of_text] = getBotLinkFromMessageChatGPT(bot[i]);
+            console.log("text_content", text_content);
+            console.log("href_of_text", href_of_text);
+            let botTextContent = bot[i].textContent;
+            let next_index = 0;
+            if (href_of_text.length > 0) {
+              for(let j = 0; j < href_of_text.length; j++) {
+                let start_index = botTextContent.indexOf(text_content[j].textContent, next_index);
+                let end_index = start_index + text_content[j].textContent.length;
+                botTextContent = botTextContent.substring(0, start_index) + href_of_text[j].href + " " + botTextContent.substring(end_index);
+                next_index = (botTextContent.substring(0, start_index) + href_of_text[j].href + " ").length;
               }
               // GETTING LINK FOR CHATGPT PART
-              console.log(i);
+              // console.log("bot content", i ,botTextContent)
               new_bot_msgs.push(botTextContent);
-              }
+            }
+            else {
+              // if there's no link, just keep on pushing
+              console.log("no link found for chatgpt bot message", i);
+              new_bot_msgs.push(bot[i].textContent);
+            }
           }
           else if (model === 'claude') {
             // Handle other models
