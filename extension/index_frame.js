@@ -1009,6 +1009,7 @@ function init() {
         console.log("bot messages found")
         console.log(bot);
         const new_bot_msgs = [];
+        console.log(bot.length)
         for (let i = 0; i < bot.length; i++) {
           if (sub_bot_selector) {
             const sub_bot = bot[i].querySelectorAll(sub_bot_selector);
@@ -1026,13 +1027,13 @@ function init() {
               let next_index = 0;
               if (href_of_text.length > 0) {
                 for(let j = 0; j < href_of_text.length; j++) {
-                let start_index = botTextContent.indexOf(text_content[j].textContent, next_index);
-                let end_index = start_index + text_content[j].textContent.length;
-                botTextContent = botTextContent.substring(0, start_index) + href_of_text[j].href + " " + botTextContent.substring(end_index);
-                next_index = (botTextContent.substring(0, start_index) + href_of_text[j].href + " ").length;
+                  let start_index = botTextContent.indexOf(text_content[j].textContent, next_index);
+                  let end_index = start_index + text_content[j].textContent.length;
+                  botTextContent = botTextContent.substring(0, start_index) + href_of_text[j].href + " " + botTextContent.substring(end_index);
+                  next_index = (botTextContent.substring(0, start_index) + href_of_text[j].href + " ").length;
               }
               // GETTING LINK FOR CHATGPT PART
-              console.log(botTextContent)
+              console.log(i);
               new_bot_msgs.push(botTextContent);
               }
           }
