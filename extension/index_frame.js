@@ -1058,9 +1058,7 @@ function init() {
             // currently default functionality
             console.log("Claude testing")
             const [text_content, href_of_text] = getBotLinkFromMessageChatGPT(bot[i], "span.text-nowrap.text-text-300.break-all.truncate.font-normal.group-hover\\/tag\\:text-text-200");
-
             let botTextContent = bot[i].textContent;
-            // console.log(bot[i]);
             let next_index = 0;
             if (href_of_text.length > 0) {
               for(let j = 0; j < href_of_text.length; j++) {
@@ -1077,6 +1075,7 @@ function init() {
               new_bot_msgs.push(bot[i].textContent);
             }
           }
+          // add a else if here to handle other models
           else {
             // Defaul behaviour
             new_bot_msgs.push(bot[i].textContent);
