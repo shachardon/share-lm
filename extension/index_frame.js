@@ -997,7 +997,7 @@ function init() {
   function queryAndUpdateConversationsCopilot() {
     queryAndUpdateConversations(
         '[data-content="user-message"]',
-        '[data-content="ai-message"] p'
+        '[data-content="ai-message"]'
     );
   }
 
