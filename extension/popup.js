@@ -204,10 +204,79 @@ document.addEventListener('DOMContentLoaded', function() {
               if (conversation_from_storage !== null) {
                 console.log("conversation found in storage", conversation_from_storage);
                 let conversation = "";
+                const canvas_snapshots = conversation_from_storage.canvas_snapshots || [];
+                
+                // Filter canvas snapshots to only include those from this conversation
+                // (in case there are any stray snapshots from conversation transitions)
+                const validCanvasSnapshots = canvas_snapshots.filter(snapshot => 
+                  !snapshot.conversation_id || snapshot.conversation_id === conversation_id
+                );
+                
+                // Create a timeline of all conversation elements
+                const timeline = [];
+                
+                // Add user and bot messages to timeline
                 for (let i = 0; i < conversation_from_storage.bot_msgs.length; i++) {
-                  conversation += "😄: " + conversation_from_storage.user_msgs[i] + "\n";
-                  conversation += "🤖: " + conversation_from_storage.bot_msgs[i] + "\n";
+                  if (conversation_from_storage.user_msgs[i]) {
+                    timeline.push({
+                      type: 'user',
+                      content: conversation_from_storage.user_msgs[i],
+                      position: i
+                    });
+                  }
+                  timeline.push({
+                    type: 'bot', 
+                    content: conversation_from_storage.bot_msgs[i],
+                    position: i
+                  });
                 }
+                
+                // Add canvas snapshots to timeline
+                validCanvasSnapshots.forEach(snapshot => {
+                  timeline.push({
+                    type: 'canvas',
+                    content: snapshot,
+                    position: snapshot.conversation_position
+                  });
+                });
+                
+                // Sort timeline by position
+                timeline.sort((a, b) => {
+                  if (a.position === b.position) {
+                    // If same position, prioritize: user -> bot -> canvas
+                    const order = { user: 0, bot: 1, canvas: 2 };
+                    return order[a.type] - order[b.type];
+                  }
+                  return a.position - b.position;
+                });
+                
+                // Build conversation string from timeline
+                timeline.forEach(item => {
+                  if (item.type === 'user') {
+                    conversation += "😄: " + item.content + "\n";
+                  } else if (item.type === 'bot') {
+                    conversation += "🤖: " + item.content + "\n";
+                  } else if (item.type === 'canvas') {
+                    const canvas = item.content;
+                    const title = canvas.data.displayTitle || 'Canvas';
+                    const contentType = canvas.data.contentType || 'text';
+                    
+                    // Choose emoji based on content type
+                    let canvasEmoji = '🎨'; // Default canvas emoji
+                    if (contentType === 'code') canvasEmoji = '💻';
+                    else if (contentType === 'markdown') canvasEmoji = '📝';
+                    else if (contentType === 'json') canvasEmoji = '📊';
+                    else if (contentType === 'csv') canvasEmoji = '📈';
+                    
+                    conversation += `${canvasEmoji}: ${title}\n`;
+                    
+                    // Add a preview of the content (first 100 characters)
+                    const preview = canvas.data.textContent.substring(0, 100);
+                    if (preview) {
+                      conversation += `   📄: ${preview}${canvas.data.textContent.length > 100 ? '...' : ''}\n`;
+                    }
+                  }
+                });
 
                 // Manually break to lines if no spaces are found.
                 let result = '';
