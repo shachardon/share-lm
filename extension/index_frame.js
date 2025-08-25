@@ -1031,16 +1031,18 @@ function init() {
             }
           } 
           else if (model === 'chatgpt') {
-            console.log("choosing Chatgpt loop ", i)
-            console.log(bot[i]);
+            // console.log("choosing Chatgpt loop ", i)
+            // console.log(bot[i]);
+            
             const [text_content, href_of_text] = getBotLinkFromMessageChatGPT(bot[i], 'span.max-w-full.grow.truncate.overflow-hidden.text-center');
             let botTextContent = bot[i].textContent;
             let next_index = 0;
+            console.log(botTextContent)
             if (href_of_text.length > 0) {
               for(let j = 0; j < href_of_text.length; j++) {
                 let start_index = botTextContent.indexOf(text_content[j].textContent, next_index);
                 let end_index = start_index + text_content[j].textContent.length;
-                botTextContent = botTextContent.substring(0, start_index) + href_of_text[j].href + " " + botTextContent.substring(end_index);
+                botTextContent = botTextContent.substring(0, start_index) + " " + href_of_text[j].href + " " + botTextContent.substring(end_index);
                 next_index = (botTextContent.substring(0, start_index) + href_of_text[j].href + " ").length;
               }
               // GETTING LINK FOR CHATGPT PART
@@ -1064,7 +1066,7 @@ function init() {
               for(let j = 0; j < href_of_text.length; j++) {
                 let start_index = botTextContent.indexOf(text_content[j].textContent, next_index);
                 let end_index = start_index + text_content[j].textContent.length;
-                botTextContent = botTextContent.substring(0, start_index) + href_of_text[j].href + " " + botTextContent.substring(end_index);
+                botTextContent = botTextContent.substring(0, start_index) + " " + href_of_text[j].href + " " + botTextContent.substring(end_index);
                 next_index = (botTextContent.substring(0, start_index) + href_of_text[j].href + " ").length;
               }
               new_bot_msgs.push(botTextContent);
