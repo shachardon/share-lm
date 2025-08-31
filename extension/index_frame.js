@@ -27,6 +27,7 @@ function init() {
   let mistral_app;
   let poe_app;
   let perplexity_app;
+  let cohere_app;
   let app;
   let init_already = false;
 
@@ -305,6 +306,35 @@ function init() {
         setInterval(addBadge, 5000);
       });
     }
+
+    // Let's find the cohere-app element
+    waitForElm("section:has([data-component=\"ChatFuncitonality\"])").then((cohere_app_from_storage) => {
+      cohere_app = cohere_app_from_storage;
+
+      if (!cohere_app) {
+        console.log("Couldn't find cohere-app.")
+      } else {
+        shouldShare = true;
+        app = cohere_app;
+        console.log("cohere-app found!", cohere_app);
+      }
+
+      if (!init_already || cohere_app) {
+        init_already = true;
+        getUserInfoFromStorage();
+        handleDataUpdatesFromPopup();
+      }
+
+      if (cohere_app) {
+        if (!age_verified) {
+          console.log("age not verified - adding need verification badge");
+          addNeedVerificationBadge();
+        } else {
+          addBadge();
+        }
+        setInterval(queryAndUpdateConversationsCohere, 7000);
+      }
+    });
 
 
   // *********************************************** Functions ***********************************************
@@ -974,7 +1004,14 @@ function init() {
         sub_user_selector="",sub_bot_selector="", model="perplexity"
     );
   }
-
+  
+  function queryAndUpdateConversationsCohere() {
+    queryAndUpdateConversations(
+        "[data-source-file=\"MessageContent.tsx\"] textarea",
+        "[data-source-file=\"Markdown.tsx\"]"
+    );
+  }
+  
   function getBotLinkFromMessageChatGPT(bot, class_property) {
     // from bot object look for span class="max-w-full grow truncate overflow-hidden text-center"
     // select all of span class="max-w-full grow truncate overflow-hidden text-center"
