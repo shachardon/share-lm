@@ -856,11 +856,21 @@ function init() {
     if (cur_conversation_id === 0) {
       cur_conversation_id = uuidv4();
     }
+    
+    // Create unified timeline (same logic as popup.js but without length trimming)
+    const timeline = createConversationTimeline(
+      cur_bot_msgs, 
+      cur_user_msgs, 
+      cur_canvas_snapshots,
+      cur_conversation_id
+    );
+    
     const data_short = {
       bot_msgs: cur_bot_msgs,
       user_msgs: cur_user_msgs,
       ratings: cur_ratings,
-      canvas_snapshots: cur_canvas_snapshots,
+      canvas_snapshots: cur_canvas_snapshots, // Keep for backward compatibility
+      conversation_timeline: timeline, // New unified format for server
       page_url: window.location.href,
       timestamp: new Date().toJSON(),
     };
@@ -875,6 +885,57 @@ function init() {
     }, function (response) {
       console.log(response);
     });
+  }
+
+  // Shared function used by both storage and popup
+  function createConversationTimeline(bot_msgs, user_msgs, canvas_snapshots, conversation_id) {
+    const timeline = [];
+    
+    // Add user and bot messages
+    for (let i = 0; i < bot_msgs.length; i++) {
+      if (user_msgs[i]) {
+        timeline.push({
+          type: 'user',
+          content: user_msgs[i],
+          position: i
+        });
+      }
+      timeline.push({
+        type: 'bot', 
+        content: bot_msgs[i],
+        position: i
+      });
+    }
+    
+    // Add canvas snapshots (filter for this conversation)
+    const validCanvasSnapshots = canvas_snapshots.filter(snapshot => 
+      !snapshot.conversation_id || snapshot.conversation_id === conversation_id
+    );
+    
+    validCanvasSnapshots.forEach(snapshot => {
+      timeline.push({
+        type: 'canvas',
+        content: {
+          title: snapshot.data.displayTitle || 'Canvas',
+          contentType: snapshot.data.contentType || 'text',
+          textContent: snapshot.data.textContent, // Full content for server
+          trigger: snapshot.trigger
+        },
+        position: snapshot.conversation_position,
+        timestamp: snapshot.timestamp // Use the original timestamp from when canvas was captured
+      });
+    });
+    
+    // Sort timeline
+    timeline.sort((a, b) => {
+      if (a.position === b.position) {
+        const order = { user: 0, bot: 1, canvas: 2 };
+        return order[a.type] - order[b.type];
+      }
+      return a.position - b.position;
+    });
+    
+    return timeline;
   }
 
 
