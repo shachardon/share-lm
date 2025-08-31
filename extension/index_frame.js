@@ -26,6 +26,7 @@ function init() {
   let gemini_app;
   let mistral_app;
   let poe_app;
+  let copilot_app;
   let perplexity_app;
   let cohere_app;
   let app;
@@ -223,6 +224,39 @@ function init() {
         setInterval(queryAndUpdateConversationsGemini, 7000);
         setInterval(addBadge, 5000);
       });
+    }
+
+    if (window.location.href.includes("copilot.microsoft.com")) {
+      console.log("Copilot website detected. Starting to look for #app element...");
+      const intervalId = setInterval(() => {
+        const copilot_app_from_dom = document.querySelector("#app");
+        if (copilot_app_from_dom) {
+          console.log("#app element found!");
+          clearInterval(intervalId); // Stop checking once found
+
+          copilot_app = copilot_app_from_dom;
+          app = copilot_app;
+          shouldShare = true;
+
+          if (!init_already) {
+            init_already = true;
+            getUserInfoFromStorage();
+            handleDataUpdatesFromPopup();
+          }
+
+          getFromStorage("age_verified").then((age_verified_from_storage) => {
+            age_verified = age_verified_from_storage ?? false;
+            if (!age_verified) {
+              console.log("age not verified - adding need verification badge");
+              addNeedVerificationBadge();
+            } else {
+              addBadge();
+              setInterval(addBadge, 5000);
+            }
+            setInterval(queryAndUpdateConversationsCopilot, 7000);
+          });
+        }
+      }, 1000); // Check every second
     }
 
     if (window.location.href.includes("chat.mistral.ai")) {
@@ -994,6 +1028,13 @@ function init() {
         ".Prose_presets_theme-on-accent__rESxX",
         ".Prose_presets_theme-hi-contrast__LQyM9",
         sub_user_selector="",sub_bot_selector="", model="poe"
+    );
+  }
+
+  function queryAndUpdateConversationsCopilot() {
+    queryAndUpdateConversations(
+        '[data-content="user-message"]',
+        '[data-content="ai-message"]'
     );
   }
 
