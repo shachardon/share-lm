@@ -669,7 +669,7 @@ function init() {
     // Remove the need verification badge if it exists
     const badgeNeedVerificationContainer = document.getElementById("shareLM-needs-verification-badge");
     if (badgeNeedVerificationContainer) {
-      app.parentElement.removeChild(badgeNeedVerificationContainer);
+      document.body.removeChild(badgeNeedVerificationContainer);
     }
 
     const badgeContainer = document.getElementById("shareLM-badge");
