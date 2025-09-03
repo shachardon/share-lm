@@ -1,7 +1,7 @@
 {
   "name": "ShareLM: Share your chat conversations",
   "description": "Easily contribute your human-models conversations, to create an ever-growing dataset for the benefit of the open-source community!",
-  "version": "0.0.2.2",
+  "version": "0.0.2.1",
   "manifest_version": 3,
   "icons": {
     "16": "assets/icons/icon16.png",
@@ -31,9 +31,9 @@
   "background": {
     "service_worker": "background.js"
   },
-  "host_permissions": ["https://huggingface.co/spaces/*", "https://*/hf.space/*", "https://grok.com/*"],
+  "host_permissions": ["https://huggingface.co/spaces/*", "https://*/hf.space/*", "https://grok.com/*", "https://copilot.microsoft.com/*"],
   "permissions": [
     "storage",
     "activeTab"
-    ]
-  }
+  ]
+}
