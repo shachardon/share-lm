@@ -857,7 +857,7 @@ function init() {
       cur_conversation_id = uuidv4();
     }
     
-    // Create unified timeline (same logic as popup.js but without length trimming)
+    // Create unified timeline for popup display (unchanged)
     const timeline = createConversationTimeline(
       cur_bot_msgs, 
       cur_user_msgs, 
@@ -865,12 +865,19 @@ function init() {
       cur_conversation_id
     );
     
+    // Create integrated bot messages for server submission
+    const integratedBotMsgs = createIntegratedBotMessages(
+      cur_bot_msgs,
+      cur_canvas_snapshots,
+      cur_conversation_id
+    );
+    
     const data_short = {
-      bot_msgs: cur_bot_msgs,
-      user_msgs: cur_user_msgs,
+      bot_msgs: integratedBotMsgs, // Modified bot messages with Canvas content integrated
+      user_msgs: cur_user_msgs, // User messages unchanged
       ratings: cur_ratings,
       canvas_snapshots: cur_canvas_snapshots, // Keep for backward compatibility
-      conversation_timeline: timeline, // New unified format for server
+      conversation_timeline: timeline, // Keep for popup display
       page_url: window.location.href,
       timestamp: new Date().toJSON(),
     };
@@ -885,6 +892,49 @@ function init() {
     }, function (response) {
       console.log(response);
     });
+  }
+
+  // Function to integrate Canvas content into bot messages for server submission
+  function createIntegratedBotMessages(bot_msgs, canvas_snapshots, conversation_id) {
+    // Create a copy of bot messages to modify
+    const integratedMsgs = [...bot_msgs];
+    
+    // Get valid canvas snapshots for this conversation
+    const validCanvasSnapshots = canvas_snapshots.filter(snapshot => 
+      !snapshot.conversation_id || snapshot.conversation_id === conversation_id
+    );
+    
+    // Group canvas snapshots by their conversation position
+    const canvasByPosition = {};
+    validCanvasSnapshots.forEach(snapshot => {
+      const pos = snapshot.conversation_position;
+      if (!canvasByPosition[pos]) {
+        canvasByPosition[pos] = [];
+      }
+      canvasByPosition[pos].push(snapshot);
+    });
+    
+    // Integrate canvas content into bot messages
+    Object.keys(canvasByPosition).forEach(position => {
+      const pos = parseInt(position);
+      const canvasItems = canvasByPosition[pos];
+      
+      // Ensure we have a bot message at this position
+      if (pos < integratedMsgs.length) {
+        let canvasContent = '';
+        
+        canvasItems.forEach(canvas => {
+          const title = canvas.data.displayTitle || 'Canvas';
+          const content = canvas.data.textContent || '';
+          canvasContent += `\n\n<CANVAS title="${title}">\n${content}\n</CANVAS>`;
+        });
+        
+        // Append canvas content to the bot message
+        integratedMsgs[pos] += canvasContent;
+      }
+    });
+    
+    return integratedMsgs;
   }
 
   // Shared function used by both storage and popup

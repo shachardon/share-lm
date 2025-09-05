@@ -189,33 +189,18 @@ function sendConversation(conversation_id, data_short) {
                 console.log("user_metadata_from_storage:", user_metadata_from_storage);
                 let user_metadata = user_metadata_from_storage ?? {};
 
-                // Prepare data with timeline support
-                let data;
-                if (data_short.conversation_timeline) {
-                    // New format with unified timeline including canvas data
-                    data = {
-                        conversation_id: conversation_id,
-                        timeline: data_short.conversation_timeline, // Send complete timeline including canvas
-                        page_url: data_short.page_url,
-                        user_id: user_id,
-                        user_metadata: user_metadata,
-                        timestamp: data_short.timestamp,
-                        conversation_metadata: conversation_metadata,
-                    };
-                } else {
-                    // Fallback to old format for backward compatibility
-                    data = {
-                        conversation_id: conversation_id,
-                        bot_msgs: data_short.bot_msgs,
-                        user_msgs: data_short.user_msgs,
-                        canvas_snapshots: data_short.canvas_snapshots || [], // Include canvas if available
-                        page_url: data_short.page_url,
-                        user_id: user_id,
-                        user_metadata: user_metadata,
-                        timestamp: data_short.timestamp,
-                        conversation_metadata: conversation_metadata,
-                    };
-                }
+                // Send data in the integrated format (Canvas content merged into bot_msgs)
+                const data = {
+                    conversation_id: conversation_id,
+                    bot_msgs: data_short.bot_msgs, // Contains integrated Canvas content
+                    user_msgs: data_short.user_msgs,
+                    page_url: data_short.page_url,
+                    user_id: user_id,
+                    user_metadata: user_metadata,
+                    timestamp: data_short.timestamp,
+                    conversation_metadata: conversation_metadata,
+                };
+                
                 console.log("data:", data);
                 fetch(API_URL, {
                     method: "POST",
