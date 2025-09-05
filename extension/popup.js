@@ -9,6 +9,9 @@ chrome.runtime.onConnect.addListener(function (port) {
   });
 });
 
+// Note: Timeline creation logic is handled by index_frame.js
+// The popup will use the pre-computed timeline from storage
+
 document.addEventListener('DOMContentLoaded', function() {
 
   // The main popup elements
@@ -204,9 +207,96 @@ document.addEventListener('DOMContentLoaded', function() {
               if (conversation_from_storage !== null) {
                 console.log("conversation found in storage", conversation_from_storage);
                 let conversation = "";
-                for (let i = 0; i < conversation_from_storage.bot_msgs.length; i++) {
-                  conversation += "😄: " + conversation_from_storage.user_msgs[i] + "\n";
-                  conversation += "🤖: " + conversation_from_storage.bot_msgs[i] + "\n";
+                
+                // Use the pre-computed timeline if available, otherwise fall back to legacy format
+                const timeline = conversation_from_storage.conversation_timeline;
+                
+                if (timeline && Array.isArray(timeline)) {
+                  // Use the unified timeline
+                  timeline.forEach(item => {
+                    if (item.type === 'user') {
+                      conversation += "😄: " + item.content + "\n";
+                    } else if (item.type === 'bot') {
+                      conversation += "🤖: " + item.content + "\n";
+                    } else if (item.type === 'canvas') {
+                      const canvas = item.content;
+                      const title = canvas.title || 'Canvas';
+                      
+                      conversation += `📄: ${title}\n`;
+                      
+                      // Add the actual canvas content directly (first 100 characters for preview)
+                      const fullText = canvas.textContent || '';
+                      const preview = fullText.substring(0, 100);
+                      if (preview) {
+                        conversation += `${preview}${fullText.length > 100 ? '...' : ''}\n`;
+                      }
+                    }
+                  });
+                } else {
+                  // Legacy fallback - create timeline from individual components
+                  console.log("No timeline found, using legacy format");
+                  const canvas_snapshots = conversation_from_storage.canvas_snapshots || [];
+                  
+                  // Create a simplified timeline for display
+                  const legacyTimeline = [];
+                  
+                  // Add user and bot messages
+                  for (let i = 0; i < conversation_from_storage.bot_msgs.length; i++) {
+                    if (conversation_from_storage.user_msgs[i]) {
+                      legacyTimeline.push({
+                        type: 'user',
+                        content: conversation_from_storage.user_msgs[i],
+                        position: i
+                      });
+                    }
+                    legacyTimeline.push({
+                      type: 'bot', 
+                      content: conversation_from_storage.bot_msgs[i],
+                      position: i
+                    });
+                  }
+                  
+                  // Add canvas snapshots
+                  canvas_snapshots.forEach(snapshot => {
+                    legacyTimeline.push({
+                      type: 'canvas',
+                      content: {
+                        title: snapshot.data?.displayTitle || 'Canvas',
+                        contentType: snapshot.data?.contentType || 'text',
+                        textContent: snapshot.data?.textContent || ''
+                      },
+                      position: snapshot.conversation_position || 0
+                    });
+                  });
+                  
+                  // Sort and display
+                  legacyTimeline.sort((a, b) => {
+                    if (a.position === b.position) {
+                      const order = { user: 0, bot: 1, canvas: 2 };
+                      return order[a.type] - order[b.type];
+                    }
+                    return a.position - b.position;
+                  });
+                  
+                  legacyTimeline.forEach(item => {
+                    if (item.type === 'user') {
+                      conversation += "😄: " + item.content + "\n";
+                    } else if (item.type === 'bot') {
+                      conversation += "🤖: " + item.content + "\n";
+                    } else if (item.type === 'canvas') {
+                      const canvas = item.content;
+                      const title = canvas.title || 'Canvas';
+                      
+                      conversation += `📄: ${title}\n`;
+                      
+                      // Add the actual canvas content directly
+                      const fullText = canvas.textContent || '';
+                      const preview = fullText.substring(0, 100);
+                      if (preview) {
+                        conversation += `${preview}${fullText.length > 100 ? '...' : ''}\n`;
+                      }
+                    }
+                  });
                 }
 
                 // Manually break to lines if no spaces are found.
