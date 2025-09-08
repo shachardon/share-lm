@@ -15,6 +15,8 @@ function init() {
   let cur_bot_msgs = [];
   let cur_user_msgs = [];
   let cur_ratings = [];
+  let cur_canvas_snapshots = []; // Store canvas snapshots with timestamps
+  let canvas_tracking_active = false; // Global flag to prevent multiple tracking setups
 
 
 
@@ -131,6 +133,9 @@ function init() {
           }
           setInterval(queryAndUpdateConversationsOpenAI, 7000);
           setInterval(addBadge, 50000);
+          
+          // Initialize Canvas tracking for ChatGPT
+          initializeCanvasTracking();
       }
     });
 
@@ -384,6 +389,7 @@ function init() {
             cur_conversation_id = lastConversationId;
             cur_bot_msgs = conversation.bot_msgs;
             cur_user_msgs = conversation.user_msgs;
+            cur_canvas_snapshots = conversation.canvas_snapshots || [];
           }
         });
       } else {
@@ -843,8 +849,24 @@ function init() {
     let [new_conversation, need_update] = checkConversationStatus(new_bot_msgs, new_user_msgs, new_ratings);
 
     if (new_conversation) {
-      // Do not use old conversation id
+      // Clear canvas snapshots for new conversation
+      console.log("New conversation detected - clearing canvas snapshots");
+      cur_canvas_snapshots = [];
       cur_conversation_id = 0;
+      canvas_tracking_active = false; // Reset tracking flag for new conversation
+      
+      // Also clear any pending canvas timers to prevent old snapshots
+      document.querySelectorAll('#codemirror > div > div.cm-scroller > div').forEach(element => {
+        if (element._snapshotTimer) {
+          clearTimeout(element._snapshotTimer);
+          element._snapshotTimer = null;
+        }
+        // Reset tracking flags for new conversation
+        element.removeAttribute('data-tracked');
+        element._canvasWatched = false;
+        element._canvasTrackingId = null;
+        delete element.dataset.canvasId;
+      });
     }
     if (need_update) {
       // Update messages
@@ -864,10 +886,28 @@ function init() {
     if (cur_conversation_id === 0) {
       cur_conversation_id = uuidv4();
     }
+    
+    // Create unified timeline for popup display
+    const timeline = createConversationTimeline(
+      cur_bot_msgs, 
+      cur_user_msgs, 
+      cur_canvas_snapshots,
+      cur_conversation_id
+    );
+    
+    // Create integrated bot messages for server submission
+    const integratedBotMsgs = createIntegratedBotMessages(
+      cur_bot_msgs,
+      cur_canvas_snapshots,
+      cur_conversation_id
+    );
+    
     const data_short = {
-      bot_msgs: cur_bot_msgs,
-      user_msgs: cur_user_msgs,
+      bot_msgs: integratedBotMsgs, // Modified bot messages with Canvas content integrated
+      user_msgs: cur_user_msgs, // User messages unchanged
       ratings: cur_ratings,
+      canvas_snapshots: cur_canvas_snapshots, // Keep for backward compatibility
+      conversation_timeline: timeline, // Keep for popup display
       page_url: window.location.href,
       timestamp: new Date().toJSON(),
     };
@@ -882,6 +922,99 @@ function init() {
     }, function (response) {
       console.log(response);
     });
+  }
+
+  // Function to integrate Canvas content into bot messages for server submission
+  function createIntegratedBotMessages(bot_msgs, canvas_snapshots, conversation_id) {
+    // Create a copy of bot messages to modify
+    const integratedMsgs = [...bot_msgs];
+    
+    // Get valid canvas snapshots for this conversation
+    const validCanvasSnapshots = canvas_snapshots.filter(snapshot => 
+      !snapshot.conversation_id || snapshot.conversation_id === conversation_id
+    );
+    
+    // Group canvas snapshots by their conversation position
+    const canvasByPosition = {};
+    validCanvasSnapshots.forEach(snapshot => {
+      const pos = snapshot.conversation_position;
+      if (!canvasByPosition[pos]) {
+        canvasByPosition[pos] = [];
+      }
+      canvasByPosition[pos].push(snapshot);
+    });
+    
+    // Integrate canvas content into bot messages
+    Object.keys(canvasByPosition).forEach(position => {
+      const pos = parseInt(position);
+      const canvasItems = canvasByPosition[pos];
+      
+      // Ensure we have a bot message at this position
+      if (pos < integratedMsgs.length) {
+        let canvasContent = '';
+        
+        canvasItems.forEach(canvas => {
+          const title = canvas.data.displayTitle || 'Canvas';
+          const content = canvas.data.textContent || '';
+          canvasContent += `\n\n<CANVAS title="${title}">\n${content}\n</CANVAS>`;
+        });
+        
+        // Append canvas content to the bot message
+        integratedMsgs[pos] += canvasContent;
+      }
+    });
+    
+    return integratedMsgs;
+  }
+
+  // Shared function used by both storage and popup
+  function createConversationTimeline(bot_msgs, user_msgs, canvas_snapshots, conversation_id) {
+    const timeline = [];
+    
+    // Add user and bot messages
+    for (let i = 0; i < bot_msgs.length; i++) {
+      if (user_msgs[i]) {
+        timeline.push({
+          type: 'user',
+          content: user_msgs[i],
+          position: i
+        });
+      }
+      timeline.push({
+        type: 'bot', 
+        content: bot_msgs[i],
+        position: i
+      });
+    }
+    
+    // Add canvas snapshots (filter for this conversation)
+    const validCanvasSnapshots = canvas_snapshots.filter(snapshot => 
+      !snapshot.conversation_id || snapshot.conversation_id === conversation_id
+    );
+    
+    validCanvasSnapshots.forEach(snapshot => {
+      timeline.push({
+        type: 'canvas',
+        content: {
+          title: snapshot.data.displayTitle || 'Canvas',
+          textContent: snapshot.data.textContent, // Full content for server
+          trigger: snapshot.trigger
+        },
+        position: snapshot.conversation_position,
+        timestamp: snapshot.timestamp // Use the original timestamp from when canvas was captured
+      });
+    });
+    
+    // Sort timeline
+    timeline.sort((a, b) => {
+      if (a.position === b.position) {
+        const order = { user: 0, bot: 1, canvas: 2 };
+        return order[a.type] - order[b.type];
+      }
+      return a.position - b.position;
+    });
+    
+    return timeline;
   }
 
 
@@ -1129,6 +1262,289 @@ function init() {
       });
 
     });
+  }
+
+  // *********************************************** Canvas Functions ***********************************************
+
+  function initializeCanvasTracking() {
+    console.log("Initializing Canvas tracking for ChatGPT...");
+    
+    // Prevent multiple tracking setups
+    if (canvas_tracking_active) {
+      console.log("Canvas tracking already active, skipping initialization");
+      return;
+    }
+    
+    canvas_tracking_active = true;
+    
+    const trackCanvasChanges = new MutationObserver((changes) => {
+      changes.forEach((change) => {
+        if (change.type === 'childList') {
+          change.addedNodes.forEach((node) => {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              // Look for canvas content using the specific selector
+              const canvasContent = node.querySelectorAll('#codemirror > div > div.cm-scroller > div');
+              if (canvasContent.length > 0 || node.matches('#codemirror > div > div.cm-scroller > div')) {
+                setTimeout(() => attachCanvasWatchers(), 800);
+              }
+              
+              // Check for codemirror container
+              const editorContainer = node.querySelectorAll('#codemirror');
+              if (editorContainer.length > 0 || node.matches('#codemirror')) {
+                setTimeout(() => attachCanvasWatchers(), 1200);
+              }
+            }
+          });
+        }
+      });
+    });
+    
+    trackCanvasChanges.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+    
+    // Check for existing canvas on startup
+    setTimeout(() => attachCanvasWatchers(), 1500);
+  }
+
+  function attachCanvasWatchers() {
+    const canvasContentElements = document.querySelectorAll('#codemirror > div > div.cm-scroller > div');
+    
+    if (canvasContentElements.length === 0) {
+      console.log("No canvas elements found");
+      return;
+    }
+    
+    console.log(`Found ${canvasContentElements.length} canvas elements to check`);
+    
+    canvasContentElements.forEach((element, idx) => {
+      // Create a more robust unique identifier
+      const elementContent = (element.textContent || '').substring(0, 30).replace(/\s+/g, '_');
+      const elementPosition = element.getBoundingClientRect();
+      const canvasId = `canvas_${idx}_${elementContent}_${Math.round(elementPosition.top)}`;
+      
+      // Enhanced duplicate checking
+      if (!element.hasAttribute('data-tracked') && 
+          !element._canvasWatched && 
+          !element.dataset.canvasId &&
+          !element._canvasTrackingId) {
+        
+        element.setAttribute('data-tracked', 'true');
+        element._canvasWatched = true;
+        element.dataset.canvasId = canvasId;
+        element._canvasTrackingId = canvasId; // Additional tracking property
+        
+        watchCanvasElement(element, canvasId); // Use canvasId instead of idx
+        console.log(`Started watching new canvas element with ID: ${canvasId}`);
+      } else {
+        console.log(`Canvas element already being tracked (ID: ${element.dataset.canvasId || element._canvasTrackingId || 'unknown'})`);
+      }
+    });
+  }
+
+  function watchCanvasElement(element, canvasId) {
+    console.log(`Setting up watchers for canvas element ${canvasId}...`);
+    
+    // Take initial snapshot with a longer delay to ensure the related bot message is processed
+    setTimeout(() => {
+      recordCanvasState(element, canvasId, 'initial');
+    }, 2000); // Increased delay to 2 seconds
+    
+    // Watch for content changes
+    const contentWatcher = new MutationObserver((changes) => {
+      let hasContentChange = false;
+      changes.forEach((change) => {
+        if (change.type === 'childList' || change.type === 'characterData' || 
+            (change.type === 'attributes' && !['data-tracked', 'data-canvas-id'].includes(change.attributeName))) {
+          hasContentChange = true;
+        }
+      });
+      
+      if (hasContentChange) {
+        // Clear any existing timer
+        clearTimeout(element._snapshotTimer);
+        element._snapshotTimer = setTimeout(() => {
+          recordCanvasState(element, canvasId, 'update');
+        }, 6000); // Increased debounce time
+      }
+    });
+    
+    contentWatcher.observe(element, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: ['class', 'style'] // Only watch specific attributes
+    });
+    
+    // Listen for user interaction events with longer debounce
+    ['input', 'change', 'keyup', 'paste', 'blur'].forEach(eventName => {
+      element.addEventListener(eventName, () => {
+        clearTimeout(element._snapshotTimer);
+        element._snapshotTimer = setTimeout(() => {
+          recordCanvasState(element, canvasId, 'user_interaction');
+        }, 5000);
+      });
+    });
+  }
+
+  function recordCanvasState(element, elementId, triggerType) {
+    try {
+      // Check if we recently recorded this exact content to prevent duplicates
+      const currentContent = element.textContent || element.innerText || '';
+      const contentHash = currentContent.substring(0, 200); // Increased hash length for better uniqueness
+      
+      // More aggressive duplicate detection - check by content hash alone for recent snapshots
+      const now = new Date();
+      
+      // Check if this exact content was recorded recently (within 15 seconds) regardless of element ID
+      const recentSnapshot = cur_canvas_snapshots
+        .find(s => {
+          const timeDiff = now - new Date(s.timestamp);
+          const sameContent = s.data.textContent.substring(0, 200) === contentHash;
+          return timeDiff < 15000 && sameContent;
+        });
+      
+      if (recentSnapshot) {
+        console.log(`Skipping duplicate canvas snapshot - identical content found from ${Math.round((now - new Date(recentSnapshot.timestamp)) / 1000)}s ago`);
+        return;
+      }
+      
+      // Additional check: if this is an initial snapshot, make sure we don't have too many recent initials
+      if (triggerType === 'initial') {
+        const recentInitials = cur_canvas_snapshots.filter(s => {
+          const timeDiff = now - new Date(s.timestamp);
+          return timeDiff < 10000 && s.trigger === 'initial';
+        });
+        
+        if (recentInitials.length >= 1) {
+          console.log(`Skipping initial canvas snapshot - already have ${recentInitials.length} recent initial snapshot(s)`);
+          return;
+        }
+      }
+      
+      // Better conversation position logic - use current length for new canvases, length-1 for updates
+      let conversationPosition;
+      if (triggerType === 'initial') {
+        // For initial canvas, associate with the current bot message being processed
+        conversationPosition = cur_bot_msgs.length;
+      } else {
+        // For updates, associate with the last complete bot message
+        conversationPosition = Math.max(0, cur_bot_msgs.length - 1);
+      }
+      
+      const canvasRecord = {
+        canvas_id: elementId,
+        timestamp: now.toISOString(),
+        trigger: triggerType,
+        conversation_id: cur_conversation_id, // Track which conversation this belongs to
+        data: {
+          textContent: currentContent,
+          htmlContent: element.innerHTML,
+          displayTitle: extractCanvasTitle(element)
+        },
+        conversation_position: conversationPosition
+      };
+      
+      cur_canvas_snapshots.push(canvasRecord);
+      console.log(`Canvas state recorded:`, {
+        canvas_id: canvasRecord.canvas_id,
+        title: canvasRecord.data.displayTitle,
+        trigger: canvasRecord.trigger,
+        contentLength: currentContent.length,
+        conversation_id: cur_conversation_id,
+        conversation_position: conversationPosition,
+        current_bot_msgs_length: cur_bot_msgs.length,
+        total_snapshots: cur_canvas_snapshots.length
+      });
+      
+      // Prevent memory overflow by limiting stored snapshots
+      if (cur_canvas_snapshots.length > 40) {
+        cur_canvas_snapshots = cur_canvas_snapshots.slice(-25);
+      }
+      
+    } catch (err) {
+      console.error('Failed to record canvas state:', err);
+    }
+  }
+
+  function extractCanvasTitle(element) {
+    const text = element.textContent || '';
+    
+    // Try to find title from parent elements first
+    const editorRoot = element.closest('#codemirror');
+    if (editorRoot) {
+      const container = editorRoot.parentElement;
+      if (container) {
+        const titleElements = [
+          'h1', 'h2', 'h3', 'h4', 'h5',
+          '[data-testid*="title"]',
+          '.canvas-header',
+          '.editor-title'
+        ];
+        
+        for (const selector of titleElements) {
+          const titleEl = container.querySelector(selector);
+          if (titleEl && titleEl.textContent.trim()) {
+            return titleEl.textContent.trim();
+          }
+        }
+      }
+    }
+    
+    // Extract meaningful title from code content
+    const lines = text.split('\n').filter(line => line.trim());
+    
+    // Look for function definitions
+    for (const line of lines) {
+      const funcMatch = line.match(/(?:def|function|class)\s+([a-zA-Z_][a-zA-Z0-9_]*)/);
+      if (funcMatch) {
+        return funcMatch[1].replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').trim();
+      }
+    }
+    
+    // Look for comments that might indicate purpose
+    for (const line of lines) {
+      if (line.trim().startsWith('#') || line.trim().startsWith('//')) {
+        const comment = line.replace(/^[#\/\s]+/, '').trim();
+        if (comment.length > 3 && comment.length < 50) {
+          return comment;
+        }
+      }
+    }
+    
+    // Look for descriptive first line
+    if (lines.length > 0) {
+      const firstLine = lines[0].trim();
+      // If first line looks like a title (not code syntax)
+      if (firstLine.length < 50 && 
+          !firstLine.includes('(') && 
+          !firstLine.includes('=') && 
+          !firstLine.includes('{') &&
+          !firstLine.startsWith('<')) {
+        return firstLine;
+      }
+    }
+    
+    // Look for print statements that might indicate the program's purpose
+    for (const line of lines) {
+      const printMatch = line.match(/print\s*\(\s*["'`]([^"'`]+)["'`]/);
+      if (printMatch && printMatch[1].length < 30) {
+        return printMatch[1];
+      }
+    }
+    
+    // Fallback to generic names based on content
+    if (text.includes('calculator') || text.includes('calc')) return 'Calculator';
+    if (text.includes('todo') || text.includes('task')) return 'Todo App';
+    if (text.includes('game') || text.includes('play')) return 'Game';
+    if (text.includes('server') || text.includes('app')) return 'Web App';
+    if (text.includes('class ') || text.includes('def ')) return 'Python Code';
+    if (text.includes('function ') || text.includes('const ')) return 'JavaScript Code';
+    if (text.includes('<html') || text.includes('<!DOCTYPE')) return 'HTML Document';
+    
+    return 'Code Editor';
   }
 }
 
