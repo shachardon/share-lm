@@ -857,7 +857,7 @@ function init() {
       cur_conversation_id = uuidv4();
     }
     
-    // Create unified timeline for popup display (unchanged)
+    // Create unified timeline for popup display
     const timeline = createConversationTimeline(
       cur_bot_msgs, 
       cur_user_msgs, 
@@ -967,7 +967,6 @@ function init() {
         type: 'canvas',
         content: {
           title: snapshot.data.displayTitle || 'Canvas',
-          contentType: snapshot.data.contentType || 'text',
           textContent: snapshot.data.textContent, // Full content for server
           trigger: snapshot.trigger
         },
@@ -1328,8 +1327,7 @@ function init() {
         data: {
           textContent: currentContent,
           htmlContent: element.innerHTML,
-          displayTitle: extractCanvasTitle(element),
-          contentType: determineContentType(element)
+          displayTitle: extractCanvasTitle(element)
         },
         conversation_position: conversationPosition
       };
@@ -1432,42 +1430,6 @@ function init() {
     if (text.includes('<html') || text.includes('<!DOCTYPE')) return 'HTML Document';
     
     return 'Code Editor';
-  }
-
-  function determineContentType(element) {
-    const text = element.textContent || '';
-    
-    // Programming language detection
-    if (text.includes('function ') || text.includes('const ') || 
-        text.includes('def ') || text.includes('class ') ||
-        text.includes('import ') || text.includes('from ') ||
-        text.includes('let ') || text.includes('var ') ||
-        text.includes('<!DOCTYPE') || text.includes('<html') ||
-        text.includes('<?php') || text.includes('#!/bin/')) {
-      return 'code';
-    }
-    
-    // Markdown detection
-    if (text.includes('# ') || text.includes('## ') || text.includes('### ') ||
-        text.includes('**') || text.includes('__') || text.includes('```')) {
-      return 'markdown';
-    }
-    
-    // Data format detection
-    if (text.trim().startsWith('{') || text.trim().startsWith('[') ||
-        text.includes('"@type":') || text.includes('"data":')) {
-      return 'json';
-    }
-    
-    // CSV detection
-    if (text.includes(',') && text.split('\n').length > 2) {
-      const lines = text.split('\n');
-      if (lines[0].split(',').length === lines[1].split(',').length) {
-        return 'csv';
-      }
-    }
-    
-    return 'text';
   }
 }
 
