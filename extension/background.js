@@ -189,10 +189,9 @@ function sendConversation(conversation_id, data_short) {
                 console.log("user_metadata_from_storage:", user_metadata_from_storage);
                 let user_metadata = user_metadata_from_storage ?? {};
 
-                // Send data in the integrated format (Canvas content merged into bot_msgs)
                 const data = {
                     conversation_id: conversation_id,
-                    bot_msgs: data_short.bot_msgs, // Contains integrated Canvas content
+                    bot_msgs: data_short.bot_msgs,
                     user_msgs: data_short.user_msgs,
                     page_url: data_short.page_url,
                     user_id: user_id,
@@ -200,7 +199,6 @@ function sendConversation(conversation_id, data_short) {
                     timestamp: data_short.timestamp,
                     conversation_metadata: conversation_metadata,
                 };
-                
                 console.log("data:", data);
                 fetch(API_URL, {
                     method: "POST",
