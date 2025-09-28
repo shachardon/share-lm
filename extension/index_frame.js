@@ -34,6 +34,30 @@ function init() {
   let app;
   let init_already = false;
 
+  function initializeSimpleSite(name, app_variable_setter, query_function, style_string) {
+    waitForElm("body").then((element) => {
+      if (style_string) {
+        const style = document.createElement('style');
+        style.innerHTML = style_string;
+        document.head.appendChild(style);
+      }
+      console.log(`${name} website detected`);
+      app_variable_setter(element);
+      app = element;
+      shouldShare = true;
+
+      if (!init_already) {
+        init_already = true;
+        getUserInfoFromStorage();
+        handleDataUpdatesFromPopup();
+      }
+
+      if (element) {
+          setInterval(query_function, 7000);
+      }
+    });
+  }
+
   // Add this to see if something is removing your element
   const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
@@ -204,113 +228,25 @@ function init() {
     });
   
     if (window.location.href.includes("gemini.google.com")) {
-      const style = document.createElement('style');
-      style.innerHTML = 'body { padding-top: 50px !important; }';
-      document.head.appendChild(style);
-      console.log("Gemini website detected");
-      gemini_app = document.body;
-      app = gemini_app;
-      shouldShare = true;
-
-      if (!init_already) {
-        init_already = true;
-        getUserInfoFromStorage();
-        handleDataUpdatesFromPopup();
-      }
-
-      getFromStorage("age_verified").then((age_verified_from_storage) => {
-        age_verified = age_verified_from_storage ?? false;
-        if (!age_verified) {
-          console.log("age not verified - adding need verification badge");
-          addNeedVerificationBadge();
-        } else {
-          addBadge();
-        }
-        setInterval(queryAndUpdateConversationsGemini, 7000);
-        setInterval(addBadge, 5000);
-      });
+        initializeSimpleSite("Gemini", (element) => { gemini_app = element; }, queryAndUpdateConversationsGemini, 'body { padding-top: 50px !important; }');
     }
 
     if (window.location.href.includes("chat.mistral.ai")) {
-      // Let's find the mistral-app element
-      waitForElm("main").then((mistral_app_from_storage) => {
-        mistral_app = mistral_app_from_storage;
-
-        if (!mistral_app) {
-          console.log("Couldn't find mistral-app.")
-        } else {
-          shouldShare = true;
-          app = mistral_app;
-          console.log("mistral-app found!", mistral_app);
-        }
-
-        if (!init_already || mistral_app) {
-          init_already = true;
-          getUserInfoFromStorage();
-          handleDataUpdatesFromPopup();
-        }
-
-        if (mistral_app) {
-          if (!age_verified) {
-            console.log("age not verified - adding need verification badge");
-            addNeedVerificationBadge();
-          } else {
-            addBadge();
-            setInterval(addBadge, 5000);
-          }
-          setInterval(queryAndUpdateConversationsMistral, 7000);
-        }
+      initializeSite({
+        name: "Mistral",
+        url_substring: "chat.mistral.ai",
+        selector: "main",
+        app_variable_setter: (element) => { mistral_app = element; },
+        query_function: queryAndUpdateConversationsMistral
       });
     }
 
     if (window.location.href.includes("poe.com")) {
-      console.log("Poe website detected");
-      poe_app = document.body;
-      app = poe_app;
-      shouldShare = true;
-
-      if (!init_already) {
-        init_already = true;
-        getUserInfoFromStorage();
-        handleDataUpdatesFromPopup();
-      }
-
-      getFromStorage("age_verified").then((age_verified_from_storage) => {
-        age_verified = age_verified_from_storage ?? false;
-        if (!age_verified) {
-          console.log("age not verified - adding need verification badge");
-          addNeedVerificationBadge();
-        } else {
-          addBadge();
-        }
-        setInterval(queryAndUpdateConversationsPoe, 7000);
-        setInterval(addBadge, 5000);
-      });
+        initializeSimpleSite("Poe", (element) => { poe_app = element; }, queryAndUpdateConversationsPoe);
     }
 
     if (window.location.href.includes("perplexity.ai")) {
-      console.log("Perplexity website detected");
-      perplexity_app = document.body;
-      app = perplexity_app;
-      shouldShare = true;
-
-      if (!init_already) {
-        init_already = true;
-        getUserInfoFromStorage();
-        handleDataUpdatesFromPopup();
-      }
-
-      getFromStorage("age_verified").then((age_verified_from_storage) => {
-        age_verified = age_verified_from_storage ?? false;
-        if (!age_verified) {
-          console.log("age not verified - adding need verification badge");
-          addNeedVerificationBadge();
-        } else {
-          addBadge();
-        }
-        setInterval(queryAndUpdateConversationsPerplexity, 7000);
-        setInterval(addBadge, 5000);
-      });
+        initializeSimpleSite("Perplexity", (element) => { perplexity_app = element; }, queryAndUpdateConversationsPerplexity);
     }
 
     // Let's find the cohere-app element
@@ -343,38 +279,39 @@ function init() {
     });
 
     if (window.location.href.includes("qwen.ai")) {
-      // Let's find the qwen-app element
-      waitForElm("#chat-message-container").then((qwen_app_from_storage) => {
-        qwen_app = qwen_app_from_storage;
+      initializeSite({
+        name: "Qwen",
+        url_substring: "qwen.ai",
+        selector: "#chat-message-container",
+        app_variable_setter: (element) => { qwen_app = element; },
+        query_function: queryAndUpdateConversationsQwen
+      });
+    }
 
-        if (!qwen_app) {
-          console.log("Couldn't find qwen-app.")
-        } else {
-          shouldShare = true;
-          app = qwen_app;
-          console.log("qwen-app found!", qwen_app);
-        }
+  function initializeSite(config) {
+    if (window.location.href.includes(config.url_substring)) {
+      if (config.style) {
+        const style = document.createElement('style');
+        style.innerHTML = config.style;
+        document.head.appendChild(style);
+      }
 
-        if (!init_already || qwen_app) {
+      waitForElm(config.selector).then((element) => {
+        console.log(`${config.name} detected`);
+        app = element;
+        config.app_variable_setter(element);
+        shouldShare = true;
+
+        if (!init_already) {
           init_already = true;
           getUserInfoFromStorage();
           handleDataUpdatesFromPopup();
         }
 
-        if (qwen_app) {
-          if (!age_verified) {
-            console.log("age not verified - adding need verification badge");
-            addNeedVerificationBadge();
-          } else {
-            addBadge();
-            setInterval(addBadge, 5000);
-          }
-          setInterval(queryAndUpdateConversationsQwen, 7000);
-        }
+        setInterval(config.query_function, 7000);
       });
     }
-
-
+  }
   // *********************************************** Functions ***********************************************
 
   // Get user info from storage or init
