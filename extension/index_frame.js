@@ -30,6 +30,7 @@ function init() {
   let poe_app;
   let perplexity_app;
   let cohere_app;
+  let qwen_app;
   let app;
   let init_already = false;
 
@@ -340,6 +341,38 @@ function init() {
         setInterval(queryAndUpdateConversationsCohere, 7000);
       }
     });
+
+    if (window.location.href.includes("qwen.ai")) {
+      // Let's find the qwen-app element
+      waitForElm("#chat-message-container").then((qwen_app_from_storage) => {
+        qwen_app = qwen_app_from_storage;
+
+        if (!qwen_app) {
+          console.log("Couldn't find qwen-app.")
+        } else {
+          shouldShare = true;
+          app = qwen_app;
+          console.log("qwen-app found!", qwen_app);
+        }
+
+        if (!init_already || qwen_app) {
+          init_already = true;
+          getUserInfoFromStorage();
+          handleDataUpdatesFromPopup();
+        }
+
+        if (qwen_app) {
+          if (!age_verified) {
+            console.log("age not verified - adding need verification badge");
+            addNeedVerificationBadge();
+          } else {
+            addBadge();
+            setInterval(addBadge, 5000);
+          }
+          setInterval(queryAndUpdateConversationsQwen, 7000);
+        }
+      });
+    }
 
 
   // *********************************************** Functions ***********************************************
@@ -1142,6 +1175,14 @@ function init() {
     queryAndUpdateConversations(
         "[data-source-file=\"MessageContent.tsx\"] textarea",
         "[data-source-file=\"Markdown.tsx\"]"
+    );
+  }
+
+  function queryAndUpdateConversationsQwen() {
+    queryAndUpdateConversations(
+        '.user-message-text-content',
+        'div[data-lang-code]',
+        sub_user_selector="",sub_bot_selector="", model="qwen"
     );
   }
   

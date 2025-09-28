@@ -31,7 +31,7 @@
   "background": {
     "service_worker": "background.js"
   },
-  "host_permissions": ["https://huggingface.co/spaces/*", "https://*/hf.space/*", "https://grok.com/*", "https://claude.ai/*"],
+  "host_permissions": ["https://huggingface.co/spaces/*", "https://*/hf.space/*", "https://grok.com/*", "https://claude.ai/*", "https://qwen.ai/*"],
   "permissions": [
     "storage",
     "activeTab"
