@@ -199,6 +199,7 @@ function sendConversation(conversation_id, data_short) {
                     user_metadata: user_metadata,
                     timestamp: data_short.timestamp,
                     conversation_metadata: conversation_metadata,
+                    model_name: data_short.model_name,
                 };
                 
                 console.log("data:", data);

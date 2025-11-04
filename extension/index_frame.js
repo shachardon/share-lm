@@ -15,6 +15,7 @@ function init() {
   let cur_bot_msgs = [];
   let cur_user_msgs = [];
   let cur_ratings = [];
+  let cur_model_name = "";
   let cur_canvas_snapshots = []; // Store canvas snapshots with timestamps
   let canvas_tracking_active = false; // Global flag to prevent multiple tracking setups
 
@@ -846,7 +847,7 @@ function init() {
   }
 
   // Function to handle the newly received messages
-  function checkInConversation(new_bot_msgs, new_user_msgs, new_ratings) {
+  function checkInConversation(new_bot_msgs, new_user_msgs, new_ratings, new_model_name) {
     let [new_conversation, need_update] = checkConversationStatus(new_bot_msgs, new_user_msgs, new_ratings);
 
     if (new_conversation) {
@@ -874,6 +875,7 @@ function init() {
       cur_bot_msgs = new_bot_msgs;
       cur_user_msgs = new_user_msgs;
       cur_ratings = new_ratings;
+      cur_model_name = new_model_name;
       if (new_user_msgs.length > 0) {
         saveCurConversationToLocalStorage();
         // sendConversation();
@@ -911,6 +913,7 @@ function init() {
       conversation_timeline: timeline, // Keep for popup display
       page_url: window.location.href,
       timestamp: new Date().toJSON(),
+      model_name: cur_model_name,
     };
     console.log("data_short:", data_short);
 
@@ -1021,6 +1024,7 @@ function init() {
 
   // Function to update the conversation
   function queryAndUpdateConversationsGradio() {
+    queryAndUpdateConversations("[data-testid=\"user\"]", "[data-testid=\"bot\"]", undefined, undefined, "TODO: Gradio model name selector");
     queryAndUpdateConversations("[data-testid=\"user\"]", "[data-testid=\"bot\"]", sub_user_selector="",sub_bot_selector="", model="gradio");
   }
 
@@ -1033,6 +1037,12 @@ function init() {
         // queryAndUpdateConversations('.scrollbar-custom.mr-1.h-full.overflow-y-auto .text-gray-500',
         //     '.scrollbar-custom.mr-1.h-full.overflow-y-auto .text-gray-600');
       queryAndUpdateConversations("[class=\"disabled w-full appearance-none whitespace-break-spaces text-wrap break-words bg-inherit px-5 py-3.5 text-gray-500 dark:text-gray-400\"]",
+          "[class=\"prose max-w-none dark:prose-invert max-sm:prose-sm prose-headings:font-semibold prose-h1:text-lg prose-h2:text-base prose-h3:text-base prose-pre:bg-gray-800 dark:prose-pre:bg-gray-900\"]",
+          undefined, undefined, "TODO: ChatUI model name selector");
+      } else {
+        queryAndUpdateConversations(org_chat_ui_user_selector,
+            "[class=\"prose max-w-none dark:prose-invert max-sm:prose-sm prose-headings:font-semibold prose-h1:text-lg prose-h2:text-base prose-h3:text-base prose-pre:bg-gray-800 dark:prose-pre:bg-gray-900\"]",
+            undefined, undefined, "TODO: ChatUI model name selector");
           "[class=\"prose max-w-none dark:prose-invert max-sm:prose-sm prose-headings:font-semibold prose-h1:text-lg prose-h2:text-base prose-h3:text-base prose-pre:bg-gray-800 dark:prose-pre:bg-gray-900\"]", 
           sub_user_selector="",sub_bot_selector="", model="chatui");
       } else {
@@ -1046,6 +1056,11 @@ function init() {
   function queryAndUpdateConversationsOpenAI() {
     queryAndUpdateConversations(
         "[data-message-author-role=\"user\"]",
+        "[data-message-author-role=\"assistant\"]",
+        undefined,
+        undefined,
+        '[data-testid="model-switcher-dropdown-button"] > div'
+    );//,
         "[data-message-author-role=\"assistant\"]", sub_user_selector="",sub_bot_selector="", model="chatgpt");//,
   }
 
@@ -1055,6 +1070,11 @@ function init() {
     // grid-cols-1.grid.gap-2
     // .grid-cols-1.grid.gap-2.5
     queryAndUpdateConversations("[data-testid=\"user-message\"]",
+        ".font-claude-response.relative",
+        undefined,
+        undefined,
+        'svg.claude-logo-model-selector + div > div'
+    );//,
         ".grid-cols-1.grid.gap-2\\.5", sub_user_selector="",sub_bot_selector="", model="claude");//,
   }
 
@@ -1102,13 +1122,104 @@ function init() {
         console.log("new_bot_msgs:", new_bot_msgs);
         queryAndUpdateRating(new_bot_msgs.length).then((new_ratings) => {
           // Check if the conversation has changed, if so, send it to the server
-          checkInConversation(new_bot_msgs, new_user_msgs, new_ratings);
+          let model_name = getModelName("span.font-semibold.line-clamp-1");
+          if (model_name) {
+            model_name = "Grok " + model_name;
+          }
+          checkInConversation(new_bot_msgs, new_user_msgs, new_ratings, model_name);
         });
       });
     })
   }
 
   function queryAndUpdateConversationsGemini() {
+    if (!shouldShare || !age_verified) {
+      console.log("Sharing is disabled, not updating conversation");
+      return;
+    }
+
+    const user_selector = "div.query-text";
+    const bot_selector = "div.markdown-main-panel";
+
+    waitForElms(user_selector).then((user) => {
+      const new_user_msgs = [];
+      for (let i = 0; i < user.length; i++) {
+        new_user_msgs.push(user[i].textContent);
+      }
+      waitForElms(bot_selector).then((bot) => {
+        const new_bot_msgs = [];
+        for (let i = 0; i < bot.length; i++) {
+          new_bot_msgs.push(bot[i].textContent);
+        }
+
+        queryAndUpdateRating(new_bot_msgs.length).then((new_ratings) => {
+          let model_name = getModelName("div.logo-pill-label-container > span");
+          if (model_name) {
+            model_name = "Gemini " + model_name;
+          }
+          checkInConversation(new_bot_msgs, new_user_msgs, new_ratings, model_name);
+        });
+      });
+    });
+  }
+
+  function queryAndUpdateConversationsMistral() {
+    if (!shouldShare || !age_verified) {
+      console.log("Sharing is disabled, not updating conversation");
+      return;
+    }
+
+    const user_selector = '[data-message-author-role="user"] .select-text';
+    const bot_selector = '[data-message-author-role="assistant"] [data-message-part-type="answer"]';
+
+    waitForElms(user_selector).then((user) => {
+      const new_user_msgs = [];
+      for (let i = 0; i < user.length; i++) {
+        new_user_msgs.push(user[i].textContent);
+      }
+      waitForElms(bot_selector).then((bot) => {
+        const new_bot_msgs = [];
+        for (let i = 0; i < bot.length; i++) {
+          new_bot_msgs.push(bot[i].textContent);
+        }
+
+        queryAndUpdateRating(new_bot_msgs.length).then((new_ratings) => {
+          const model_name = "Mistral LeChat";
+          checkInConversation(new_bot_msgs, new_user_msgs, new_ratings, model_name);
+        });
+      });
+    });
+  }
+
+  function queryAndUpdateConversationsPoe() {
+    if (!shouldShare || !age_verified) {
+      console.log("Sharing is disabled, not updating conversation");
+      return;
+    }
+
+    const user_selector = ".Prose_presets_theme-on-accent__rESxX";
+    const bot_selector = ".Prose_presets_theme-hi-contrast__LQyM9";
+
+    waitForElms(user_selector).then((user) => {
+      const new_user_msgs = [];
+      for (let i = 0; i < user.length; i++) {
+        new_user_msgs.push(user[i].textContent);
+      }
+      waitForElms(bot_selector).then((bot) => {
+        const new_bot_msgs = [];
+        for (let i = 0; i < bot.length; i++) {
+          new_bot_msgs.push(bot[i].textContent);
+        }
+
+        queryAndUpdateRating(new_bot_msgs.length).then((new_ratings) => {
+          let model_name = getModelName("h2.BotInfoCardHeader_botName__IPFrb");
+          if (model_name) {
+            model_name = "Poe " + model_name;
+          }
+          checkInConversation(new_bot_msgs, new_user_msgs, new_ratings, model_name);
+        });
+      });
+    });
     queryAndUpdateConversations(
         "div.query-text",
         "div.markdown-main-panel", sub_user_selector="",sub_bot_selector="", model="gemini"
@@ -1132,7 +1243,40 @@ function init() {
   }
 
   function queryAndUpdateConversationsPerplexity() {
+    if (!shouldShare || !age_verified) {
+      console.log("Sharing is disabled, not updating conversation");
+      return;
+    }
+
+    const user_selector = ".font-display.text-pretty";
+    const bot_selector = "div.prose";
+
+    waitForElms(user_selector).then((user) => {
+      const new_user_msgs = [];
+      for (let i = 0; i < user.length; i++) {
+        new_user_msgs.push(user[i].textContent);
+      }
+      waitForElms(bot_selector).then((bot) => {
+        const new_bot_msgs = [];
+        for (let i = 0; i < bot.length; i++) {
+          new_bot_msgs.push(bot[i].textContent);
+        }
+
+        queryAndUpdateRating(new_bot_msgs.length).then((new_ratings) => {
+          const model_name = "Perplexity: Unknown";
+          checkInConversation(new_bot_msgs, new_user_msgs, new_ratings, model_name);
+        });
+      });
+    });
+  }
+
+  function queryAndUpdateConversationsCohere() {
     queryAndUpdateConversations(
+        "[data-source-file=\"MessageContent.tsx\"] textarea",
+        "[data-source-file=\"Markdown.tsx\"]",
+        undefined,
+        undefined,
+        'div[class="text-p font-body mr-2 w-full truncate text-left"] > div[class="flex items-center gap-x-3"]'
         ".font-display.text-pretty",
         "div.prose",
         sub_user_selector="",sub_bot_selector="", model="perplexity"
@@ -1167,6 +1311,15 @@ function init() {
   }
 
 
+  function getModelName(selector) {
+    const model_name_element = document.querySelector(selector);
+    if (model_name_element) {
+      return model_name_element.textContent;
+    }
+    return "";
+  }
+
+  function queryAndUpdateConversations(user_selector, bot_selector, sub_user_selector, sub_bot_selector, model_selector) {
   function queryAndUpdateConversations(user_selector, bot_selector, sub_user_selector="", sub_bot_selector="", model) {
     if (!shouldShare || !age_verified) {
       console.log("Sharing is disabled, not updating conversation");
@@ -1258,7 +1411,8 @@ function init() {
         // Get the ratings from ChatUI
         queryAndUpdateRating(new_bot_msgs.length).then((new_ratings) => {
           // Check if the conversation has changed, if so, send it to the server
-          checkInConversation(new_bot_msgs, new_user_msgs, new_ratings);
+          const model_name = getModelName(model_selector);
+          checkInConversation(new_bot_msgs, new_user_msgs, new_ratings, model_name);
         });
       });
 
