@@ -140,7 +140,8 @@ function init() {
     });
 
     // Let's find the claude-ai element
-    waitForElm("body > div.flex.min-h-screen.w-full").then((claude_ai_app_from_storage) => {
+  waitForElm("body > div.root > div > div.w-full.relative.min-w-0").then((claude_ai_app_from_storage) => {
+
     // waitForElm("[class=\"from-bg-200 to-bg-100 text-text-100 font-styrene min-h-screen bg-gradient-to-b bg-fixed tracking-tight\"]").then((claude_ai_app_from_storage) => {
     // waitForElm("[data-theme=\"claude\"]").then((claude_ai_app_from_storage) => {
 
