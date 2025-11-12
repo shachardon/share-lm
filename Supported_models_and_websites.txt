@@ -7,3 +7,4 @@ Poe
 Perplexity
 grok
 Cohere Playground
+Qwen
