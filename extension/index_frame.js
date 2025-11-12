@@ -1,5 +1,3 @@
-
-
 // Init function
 function init() {
 
@@ -1064,47 +1062,76 @@ function init() {
     //sub_bots : 
     // -- class="response-content-markdown markdown [&_a:not(.not-prose)]:text-current [&_a:not(.not-prose):hover]:text-primary [&_a:not(.not-prose):hover]:decoration-primary [&_a:not(.not-prose)]:underline [&_a:not(.not-prose)]:decoration-primary/30 [&_a:not(.not-prose)]:underline-offset-2 [&_h2:not(.not-prose):first-child]:mt-0 [&_h3:not(.not-prose):first-child]:mt-0 [&_h4:not(.not-prose):first-child]:mt-0"
     // -- class="response-content-markdown markdown [&_a:not(.not-prose)]:text-current [&_a:not(.not-prose):hover]:text-primary [&_a:not(.not-prose):hover]:decoration-primary [&_a:not(.not-prose)]:underline [&_a:not(.not-prose)]:decoration-primary/30 [&_a:not(.not-prose)]:underline-offset-2"
+    // -- class="relative not-prose @container/code-block [&_div+div]:!mt-0 mt-3 mb-3 @md:-mx-4 @md:-mr-4"
+    // -- class="flex cursor-pointer rounded-2xl border border-border-l1 bg-surface-l2 hover:bg-surface-l4-hover dark:hover:bg-surface-l3"
     sub_bot_selector = [
       "[class=\"response-content-markdown markdown [&_a:not(.not-prose)]:text-current [&_a:not(.not-prose):hover]:text-primary [&_a:not(.not-prose):hover]:decoration-primary [&_a:not(.not-prose)]:underline [&_a:not(.not-prose)]:decoration-primary/30 [&_a:not(.not-prose)]:underline-offset-2 [&_h2:not(.not-prose):first-child]:mt-0 [&_h3:not(.not-prose):first-child]:mt-0 [&_h4:not(.not-prose):first-child]:mt-0\"]",
-      "[class=\"response-content-markdown markdown [&_a:not(.not-prose)]:text-current [&_a:not(.not-prose):hover]:text-primary [&_a:not(.not-prose):hover]:decoration-primary [&_a:not(.not-prose)]:underline [&_a:not(.not-prose)]:decoration-primary/30 [&_a:not(.not-prose)]:underline-offset-2\"]"
+      "[class=\"response-content-markdown markdown [&_a:not(.not-prose)]:text-current [&_a:not(.not-prose):hover]:text-primary [&_a:not(.not-prose):hover]:decoration-primary [&_a:not(.not-prose)]:underline [&_a:not(.not-prose)]:decoration-primary/30 [&_a:not(.not-prose)]:underline-offset-2\"]",
+      "[class=\"relative not-prose @container/code-block [&_div+div]:!mt-0 mt-3 mb-3 @md:-mx-4 @md:-mr-4\"]",
+      "[class=\"flex cursor-pointer rounded-2xl border border-border-l1 bg-surface-l2 hover:bg-surface-l4-hover dark:hover:bg-surface-l3\"]",
+      "[class=\"relative response-content-markdown markdown [&_a:not(.not-prose)]:text-current [&_a:not(.not-prose):hover]:text-primary [&_a:not(.not-prose):hover]:decoration-primary [&_a:not(.not-prose)]:underline [&_a:not(.not-prose)]:decoration-primary/30 [&_a:not(.not-prose)]:underline-offset-2 [&_h2:not(.not-prose):first-child]:mt-0 [&_h3:not(.not-prose):first-child]:mt-0 [&_h4:not(.not-prose):first-child]:mt-0\"]",
+      "[class=\"relative response-content-markdown markdown [&_a:not(.not-prose)]:text-current [&_a:not(.not-prose):hover]:text-primary [&_a:not(.not-prose):hover]:decoration-primary [&_a:not(.not-prose)]:underline [&_a:not(.not-prose)]:decoration-primary/30 [&_a:not(.not-prose)]:underline-offset-2\"]"
     ]
-    //queryAndUpdateConversations(
-    //  "[class=\"relative group flex flex-col justify-center w-full max-w-[var(--content-max-width)] pb-0.5 items-end\"]",
-    //  "[class=\"response-content-markdown markdown [&_a:not(.not-prose)]:text-current [&_a:not(.not-prose):hover]:text-primary [&_a:not(.not-prose):hover]:decoration-primary [&_a:not(.not-prose)]:underline [&_a:not(.not-prose)]:decoration-primary/30 [&_a:not(.not-prose)]:underline-offset-2 [&_h2:not(.not-prose):first-child]:mt-0 [&_h3:not(.not-prose):first-child]:mt-0 [&_h4:not(.not-prose):first-child]:mt-0\"]"
-    //);
-    //independent from other models
+    //filters :
+    // -- class="flex flex-row px-4 py-2 h-10 items-center rounded-t-xl bg-surface-l2 border border-border-l1"
+    // -- class="sticky w-full right-2 z-10 @[1280px]/mainview:z-40 @[1280px]/mainview:top-10 top-24 @[0px]/preview:top-5 print:hidden"
+    // -- class="katex-html"
+    // -- class="katex-mathml -> <math> -> <semantic> -> <mrow>"
+    sub_bot_filters = [
+      "[class=\"flex flex-row px-4 py-2 h-10 items-center rounded-t-xl bg-surface-l2 border border-border-l1\"]",
+      "[class=\"sticky w-full right-2 z-10 @[1280px]/mainview:z-40 @[1280px]/mainview:top-10 top-24 @[0px]/preview:top-5 print:hidden\"]",
+      "[class=\"katex-html\"]",
+      "[class=\"katex-mathml\"] > math > semantic > mrow",
+      "mrow"
+    ]
+    const sub_bot_filter_combined = sub_bot_filters.join(",");
+    const sub_bot_selector_combined = sub_bot_selector.join(",");
     if (!shouldShare || !age_verified) {
       console.log("Sharing is disables, not updating conversation");
       return;
     }
-    waitForElms("[class=\"relative group flex flex-col justify-center w-full max-w-[var(--content-max-width)] pb-0.5 items-end\"]").then((user) => {
+    waitForElms("[class=\"relative group flex flex-col justify-center w-full max-w-[var(--content-max-width)] pb-0.5 items-end\"]").then(async (user) => {
       const new_user_msgs = [];
       for (let i = 0; i < user.length; i++) {
         new_user_msgs.push(user[i].textContent);
       }
-      waitForElms("[class=\"message-bubble rounded-3xl text-primary min-h-7 prose dark:prose-invert break-words prose-p:opacity-100 prose-strong:opacity-100 prose-li:opacity-100 prose-ul:opacity-100 prose-ol:opacity-100 prose-ul:my-1 prose-ol:my-1 prose-li:my-2 last:prose-li:mb-3 prose-li:ps-1 prose-li:ms-1 w-full max-w-none\"]").then((bot) => {
-        //extract elements that match one of sub_bot selectors
-        console.log("bot messages found", bot);
-        const new_bot_msgs = [];
-        for (let i = 0; i < bot.length; i++) {
-          let sub_bot_concat = "";
-          // Support array of selectors
-          let sub_bot_elements = [];
-          sub_bot_selector.forEach(sel => {
-            sub_bot_elements = sub_bot_elements.concat(Array.from(bot[i].querySelectorAll(sel)));
+      const bot = await waitForElms("[class=\"message-bubble relative rounded-3xl text-primary min-h-7 prose dark:prose-invert break-words prose-p:opacity-100 prose-strong:opacity-100 prose-li:opacity-100 prose-ul:opacity-100 prose-ol:opacity-100 prose-ul:my-1 prose-ol:my-1 prose-li:my-2 last:prose-li:mb-3 prose-li:ps-1 prose-li:ms-1 w-full max-w-none\"]");
+      console.log("bot messages found", bot);
+      const new_bot_msgs = [];
+      for (let i = 0; i < bot.length; i++) {
+        let sub_bot_concat = "";
+        let sub_bot_elements = Array.from(bot[i].querySelectorAll(sub_bot_selector_combined));
+        for (const el of sub_bot_elements) {
+          let clone = el.cloneNode(true);
+          clone.querySelectorAll(sub_bot_filter_combined).forEach(filter => {
+            filter.remove();
           });
-          console.log("sub_bot_elements:", sub_bot_elements);
-          sub_bot_elements.forEach(el => {
-            sub_bot_concat += el.textContent;
-          });
-          new_bot_msgs.push(sub_bot_concat);
+          if (clone.id.startsWith("artifact_card_")) {
+            let file_id = clone.id.split("_")[2];
+            try {
+              const response = await fetch(`https://grok.com/rest/app-chat/artifact_content/${file_id}`);
+              if (!response.ok) {
+                continue;
+              }
+              const data = await response.json();
+              const content = data["fullArtifact"];
+              const artifactRegex = /<xaiArtifact[\s\S]*?>([\s\S]*?)<\/xaiArtifact>/;
+              const match = content.match(artifactRegex);
+              const fileContent = match ? match[1].trim() : content;
+              //console.log("fileContent:", fileContent);
+              sub_bot_concat += fileContent;
+            } catch (err) {
+              //console.error("Error fetching artifact:", err);
+            }
+          } else {
+            sub_bot_concat += clone.textContent;
+          }
         }
-        console.log("new_bot_msgs:", new_bot_msgs);
-        queryAndUpdateRating(new_bot_msgs.length).then((new_ratings) => {
-          // Check if the conversation has changed, if so, send it to the server
-          checkInConversation(new_bot_msgs, new_user_msgs, new_ratings);
-        });
-      });
+        new_bot_msgs.push(sub_bot_concat);
+      }
+      console.log("new_bot_msgs:", new_bot_msgs);
+      const new_ratings = await queryAndUpdateRating(new_bot_msgs.length);
+      checkInConversation(new_bot_msgs, new_user_msgs, new_ratings);
     })
   }
 
