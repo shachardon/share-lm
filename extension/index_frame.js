@@ -105,8 +105,8 @@ function init() {
   });
 
   // Let's find the openai-app element
-    waitForElm("body > div.flex.h-full.w-full.flex-col").then((openai_app_from_storage) => {
-      openai_app = openai_app_from_storage;
+  waitForElm("body > div.flex.h-svh.w-screen.flex-col").then((openai_app_from_storage) => {
+    openai_app = openai_app_from_storage;
 
       if (!openai_app) {
           console.log("Couldn't find openai-app.")
@@ -130,12 +130,12 @@ function init() {
               addBadge();
           }
           setInterval(queryAndUpdateConversationsOpenAI, 7000);
-          setInterval(addBadge, 50000);
+          setInterval(addBadge, 5000);
           
           // Initialize Canvas tracking for ChatGPT
           initializeCanvasTracking();
       }
-    });
+  });
 
     // Let's find the claude-ai element
   waitForElm("body > div.root > div > div.w-full.relative.min-w-0").then((claude_ai_app_from_storage) => {
@@ -775,7 +775,7 @@ function init() {
             console.log("app has no parent node - insertAdjacentElement won't work");
             // look again for the app element
             if (openai_app) {
-              app = document.querySelector("body > div.flex.h-full.w-full.flex-col");
+              app = document.querySelector("body > div.flex.h-svh.w-screen.flex-col");
             } else if (claude_ai_app) {
               app = document.querySelector("body > div.flex.min-h-screen.w-full");
             } else if (gemini_app) {
