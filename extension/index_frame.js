@@ -105,74 +105,95 @@ function init() {
   });
 
   // Let's find the openai-app element
-  waitForElm("body > div.flex.h-svh.w-screen.flex-col").then((openai_app_from_storage) => {
-    openai_app = openai_app_from_storage;
+  if (window.location.href.includes("chatgpt.com") || window.location.href.includes("chat.openai.com")) {
+    let openaiElmFound = false;
+    setTimeout(() => {
+      if (!openaiElmFound) console.warn("[ShareLM] URL matches ChatGPT but the expected DOM element was not found. The site may have updated its layout.");
+    }, 15000);
+    waitForElm("body > div:nth-child(5) > div.flex.h-svh.w-screen.flex-col").then((openai_app_from_storage) => {
+    // waitForElm("body > div.flex.h-svh.w-screen.flex-col").then((openai_app_from_storage) => {
+      openaiElmFound = true;
+      openai_app = openai_app_from_storage;
 
-      if (!openai_app) {
-          console.log("Couldn't find openai-app.")
-      } else {
-          shouldShare = true;
-          app = openai_app;
-          console.log("openai-app found!", openai_app);
-      }
+        if (!openai_app) {
+            console.log("Couldn't find openai-app.")
+        } else {
+            shouldShare = true;
+            app = openai_app;
+            console.log("openai-app found!", openai_app);
+        }
 
-      if (!init_already || openai_app) {
-          init_already = true;
-          getUserInfoFromStorage();
-          handleDataUpdatesFromPopup();
-      }
+        if (!init_already || openai_app) {
+            init_already = true;
+            getUserInfoFromStorage();
+            handleDataUpdatesFromPopup();
+        }
 
-      if (openai_app) {
-          if (!age_verified) {
-              console.log("age not verified - adding need verification badge");
-              addNeedVerificationBadge();
-          } else {
-              addBadge();
-          }
-          setInterval(queryAndUpdateConversationsOpenAI, 7000);
-          setInterval(addBadge, 5000);
-          
-          // Initialize Canvas tracking for ChatGPT
-          initializeCanvasTracking();
-      }
-  });
+        if (openai_app) {
+            if (!age_verified) {
+                console.log("age not verified - adding need verification badge");
+                addNeedVerificationBadge();
+            } else {
+                addBadge();
+            }
+            setInterval(queryAndUpdateConversationsOpenAI, 7000);
+            setInterval(addBadge, 5000);
+
+            // Initialize Canvas tracking for ChatGPT
+            initializeCanvasTracking();
+        }
+    });
+  }
 
     // Let's find the claude-ai element
-  waitForElm("body > div.root > div > div.w-full.relative.min-w-0").then((claude_ai_app_from_storage) => {
+  if (window.location.href.includes("claude.ai")) {
+    let claudeElmFound = false;
+    setTimeout(() => {
+      if (!claudeElmFound) console.warn("[ShareLM] URL matches Claude but the expected DOM element was not found. The site may have updated its layout.");
+    }, 15000);
+    waitForElm("body > div.root > div > div.w-full.relative.min-w-0").then((claude_ai_app_from_storage) => {
 
-    // waitForElm("[class=\"from-bg-200 to-bg-100 text-text-100 font-styrene min-h-screen bg-gradient-to-b bg-fixed tracking-tight\"]").then((claude_ai_app_from_storage) => {
-    // waitForElm("[data-theme=\"claude\"]").then((claude_ai_app_from_storage) => {
+      // waitForElm("[class=\"from-bg-200 to-bg-100 text-text-100 font-styrene min-h-screen bg-gradient-to-b bg-fixed tracking-tight\"]").then((claude_ai_app_from_storage) => {
+      // waitForElm("[data-theme=\"claude\"]").then((claude_ai_app_from_storage) => {
 
-      claude_ai_app = claude_ai_app_from_storage;
+        claudeElmFound = true;
+        claude_ai_app = claude_ai_app_from_storage;
 
-      if (!claude_ai_app) {
-        console.log("Couldn't find claude-ai-app.");
-      } else {
-        shouldShare = true;
-        app = claude_ai_app;
-        console.log("claude-ai-app found!", claude_ai_app);
-      }
-
-      if (!init_already || claude_ai_app) {
-         init_already = true;
-         getUserInfoFromStorage();
-         handleDataUpdatesFromPopup();
-      }
-
-      if (claude_ai_app) {
-        if (!age_verified) {
-          console.log("age not verified - adding need verification badge");
-          addNeedVerificationBadge();
+        if (!claude_ai_app) {
+          console.log("Couldn't find claude-ai-app.");
         } else {
-          addBadge();
+          shouldShare = true;
+          app = claude_ai_app;
+          console.log("claude-ai-app found!", claude_ai_app);
         }
-        setInterval(queryAndUpdateConversationsClaudeAI, 7000);
-      }
 
-    });
+        if (!init_already || claude_ai_app) {
+           init_already = true;
+           getUserInfoFromStorage();
+           handleDataUpdatesFromPopup();
+        }
+
+        if (claude_ai_app) {
+          if (!age_verified) {
+            console.log("age not verified - adding need verification badge");
+            addNeedVerificationBadge();
+          } else {
+            addBadge();
+          }
+          setInterval(queryAndUpdateConversationsClaudeAI, 7000);
+        }
+
+      });
+  }
 
   // Let's find the grok-app element
+  if (window.location.href.includes("grok.com")) {
+    let grokElmFound = false;
+    setTimeout(() => {
+      if (!grokElmFound) console.warn("[ShareLM] URL matches Grok but the expected DOM element was not found. The site may have updated its layout.");
+    }, 15000);
     waitForElm('body > div[class*="group/sidebar-wrapper"][class*="min-h-svh"][class*="bg-sidebar"]').then((grok_app_from_storage) => {
+      grokElmFound = true;
       grok_app = grok_app_from_storage;
       if (!grok_app) {
         console.log("Couldn't find grok-app.");
@@ -200,6 +221,7 @@ function init() {
         setInterval(addBadge, 50000);
       }
     });
+  }
   
     if (window.location.href.includes("gemini.google.com")) {
       const style = document.createElement('style');
@@ -231,7 +253,12 @@ function init() {
 
     if (window.location.href.includes("chat.mistral.ai")) {
       // Let's find the mistral-app element
+      let mistralElmFound = false;
+      setTimeout(() => {
+        if (!mistralElmFound) console.warn("[ShareLM] URL matches Mistral but the expected DOM element was not found. The site may have updated its layout.");
+      }, 15000);
       waitForElm("main").then((mistral_app_from_storage) => {
+        mistralElmFound = true;
         mistral_app = mistral_app_from_storage;
 
         if (!mistral_app) {
@@ -312,33 +339,40 @@ function init() {
     }
 
     // Let's find the cohere-app element
-    waitForElm("section:has([data-component=\"ChatFuncitonality\"])").then((cohere_app_from_storage) => {
-      cohere_app = cohere_app_from_storage;
+    if (window.location.href.includes("dashboard.cohere.com")) {
+      let cohereElmFound = false;
+      setTimeout(() => {
+        if (!cohereElmFound) console.warn("[ShareLM] URL matches Cohere but the expected DOM element was not found. The site may have updated its layout.");
+      }, 15000);
+      waitForElm("section:has([data-component=\"ChatFuncitonality\"])").then((cohere_app_from_storage) => {
+        cohereElmFound = true;
+        cohere_app = cohere_app_from_storage;
 
-      if (!cohere_app) {
-        console.log("Couldn't find cohere-app.")
-      } else {
-        shouldShare = true;
-        app = cohere_app;
-        console.log("cohere-app found!", cohere_app);
-      }
-
-      if (!init_already || cohere_app) {
-        init_already = true;
-        getUserInfoFromStorage();
-        handleDataUpdatesFromPopup();
-      }
-
-      if (cohere_app) {
-        if (!age_verified) {
-          console.log("age not verified - adding need verification badge");
-          addNeedVerificationBadge();
+        if (!cohere_app) {
+          console.log("Couldn't find cohere-app.")
         } else {
-          addBadge();
+          shouldShare = true;
+          app = cohere_app;
+          console.log("cohere-app found!", cohere_app);
         }
-        setInterval(queryAndUpdateConversationsCohere, 7000);
-      }
-    });
+
+        if (!init_already || cohere_app) {
+          init_already = true;
+          getUserInfoFromStorage();
+          handleDataUpdatesFromPopup();
+        }
+
+        if (cohere_app) {
+          if (!age_verified) {
+            console.log("age not verified - adding need verification badge");
+            addNeedVerificationBadge();
+          } else {
+            addBadge();
+          }
+          setInterval(queryAndUpdateConversationsCohere, 7000);
+        }
+      });
+    }
 
 
   // *********************************************** Functions ***********************************************
