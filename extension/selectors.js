@@ -96,8 +96,9 @@ var SHARELM_SELECTORS = {
     cohere: {
       name: "Cohere",
       url_pattern: "dashboard.cohere.com",
+      test_path: "/playground/chat",
       detection: "section:has([data-component=\"ChatFuncitonality\"])",
-      user_msg: "[data-source-file=\"MessageContent.tsx\"] textarea",
+      user_msg: "[data-component=\"MessageBody\"]",
       bot_msg: "[data-source-file=\"Markdown.tsx\"]"
     }
   },
