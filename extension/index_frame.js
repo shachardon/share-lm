@@ -1,5 +1,7 @@
 // Init function
 function init() {
+  const S = SHARELM_SELECTORS;
+  const P = S.platforms;
 
   // Init properties to store the user status
   let user_id = 0
@@ -44,7 +46,7 @@ function init() {
 
 
   // Let's find the gradio-app element
-  waitForElm("body > gradio-app").then((gradio_app_from_storage) => {
+  waitForElm(P.gradio.detection).then((gradio_app_from_storage) => {
     gradio_app = gradio_app_from_storage;
 
     // const gradio_app = document.querySelector("body > gradio-app");
@@ -75,7 +77,7 @@ function init() {
   });
 
   // Let's find the chat-ui-app element
-  waitForElm("[class=\"contents h-full\"]").then((chat_ui_app_from_storage) => {
+  waitForElm(P.chatui.detection).then((chat_ui_app_from_storage) => {
     chat_ui_app = chat_ui_app_from_storage;
 
     if (!chat_ui_app) {
@@ -105,13 +107,12 @@ function init() {
   });
 
   // Let's find the openai-app element
-  if (window.location.href.includes("chatgpt.com") || window.location.href.includes("chat.openai.com")) {
+  if (window.location.href.includes(P.chatgpt.url_pattern) || window.location.href.includes(P.chatgpt.url_pattern_alt)) {
     let openaiElmFound = false;
     setTimeout(() => {
       if (!openaiElmFound) console.warn("[ShareLM] URL matches ChatGPT but the expected DOM element was not found. The site may have updated its layout.");
     }, 15000);
-    waitForElm("body > div:nth-child(5) > div.flex.h-svh.w-screen.flex-col").then((openai_app_from_storage) => {
-    // waitForElm("body > div.flex.h-svh.w-screen.flex-col").then((openai_app_from_storage) => {
+    waitForElm(P.chatgpt.detection).then((openai_app_from_storage) => {
       openaiElmFound = true;
       openai_app = openai_app_from_storage;
 
@@ -146,15 +147,12 @@ function init() {
   }
 
     // Let's find the claude-ai element
-  if (window.location.href.includes("claude.ai")) {
+  if (window.location.href.includes(P.claude.url_pattern)) {
     let claudeElmFound = false;
     setTimeout(() => {
       if (!claudeElmFound) console.warn("[ShareLM] URL matches Claude but the expected DOM element was not found. The site may have updated its layout.");
     }, 15000);
-    waitForElm("body > div.root > div > div.w-full.relative.min-w-0").then((claude_ai_app_from_storage) => {
-
-      // waitForElm("[class=\"from-bg-200 to-bg-100 text-text-100 font-styrene min-h-screen bg-gradient-to-b bg-fixed tracking-tight\"]").then((claude_ai_app_from_storage) => {
-      // waitForElm("[data-theme=\"claude\"]").then((claude_ai_app_from_storage) => {
+    waitForElm(P.claude.detection).then((claude_ai_app_from_storage) => {
 
         claudeElmFound = true;
         claude_ai_app = claude_ai_app_from_storage;
@@ -187,12 +185,12 @@ function init() {
   }
 
   // Let's find the grok-app element
-  if (window.location.href.includes("grok.com")) {
+  if (window.location.href.includes(P.grok.url_pattern)) {
     let grokElmFound = false;
     setTimeout(() => {
       if (!grokElmFound) console.warn("[ShareLM] URL matches Grok but the expected DOM element was not found. The site may have updated its layout.");
     }, 15000);
-    waitForElm('body > div[class*="group/sidebar-wrapper"][class*="min-h-svh"][class*="bg-sidebar"]').then((grok_app_from_storage) => {
+    waitForElm(P.grok.detection).then((grok_app_from_storage) => {
       grokElmFound = true;
       grok_app = grok_app_from_storage;
       if (!grok_app) {
@@ -223,7 +221,7 @@ function init() {
     });
   }
   
-    if (window.location.href.includes("gemini.google.com")) {
+    if (window.location.href.includes(P.gemini.url_pattern)) {
       const style = document.createElement('style');
       style.innerHTML = 'body { padding-top: 50px !important; }';
       document.head.appendChild(style);
@@ -251,13 +249,13 @@ function init() {
       });
     }
 
-    if (window.location.href.includes("chat.mistral.ai")) {
+    if (window.location.href.includes(P.mistral.url_pattern)) {
       // Let's find the mistral-app element
       let mistralElmFound = false;
       setTimeout(() => {
         if (!mistralElmFound) console.warn("[ShareLM] URL matches Mistral but the expected DOM element was not found. The site may have updated its layout.");
       }, 15000);
-      waitForElm("main").then((mistral_app_from_storage) => {
+      waitForElm(P.mistral.detection).then((mistral_app_from_storage) => {
         mistralElmFound = true;
         mistral_app = mistral_app_from_storage;
 
@@ -288,7 +286,7 @@ function init() {
       });
     }
 
-    if (window.location.href.includes("poe.com")) {
+    if (window.location.href.includes(P.poe.url_pattern)) {
       console.log("Poe website detected");
       poe_app = document.body;
       app = poe_app;
@@ -313,7 +311,7 @@ function init() {
       });
     }
 
-    if (window.location.href.includes("perplexity.ai")) {
+    if (window.location.href.includes(P.perplexity.url_pattern)) {
       console.log("Perplexity website detected");
       perplexity_app = document.body;
       app = perplexity_app;
@@ -339,12 +337,12 @@ function init() {
     }
 
     // Let's find the cohere-app element
-    if (window.location.href.includes("dashboard.cohere.com")) {
+    if (window.location.href.includes(P.cohere.url_pattern)) {
       let cohereElmFound = false;
       setTimeout(() => {
         if (!cohereElmFound) console.warn("[ShareLM] URL matches Cohere but the expected DOM element was not found. The site may have updated its layout.");
       }, 15000);
-      waitForElm("section:has([data-component=\"ChatFuncitonality\"])").then((cohere_app_from_storage) => {
+      waitForElm(P.cohere.detection).then((cohere_app_from_storage) => {
         cohereElmFound = true;
         cohere_app = cohere_app_from_storage;
 
@@ -809,13 +807,13 @@ function init() {
             console.log("app has no parent node - insertAdjacentElement won't work");
             // look again for the app element
             if (openai_app) {
-              app = document.querySelector("body > div.flex.h-svh.w-screen.flex-col");
+              app = document.querySelector(P.chatgpt.detection_fallback);
             } else if (claude_ai_app) {
-              app = document.querySelector("body > div.flex.min-h-screen.w-full");
+              app = document.querySelector(P.claude.detection_fallback);
             } else if (gemini_app) {
               app = document.body;
             } else if (mistral_app) {
-                app = document.querySelector("main");
+                app = document.querySelector(P.mistral.detection_fallback);
             }
             if (app) {
               console.log("app found again");
@@ -889,7 +887,7 @@ function init() {
       canvas_tracking_active = false; // Reset tracking flag for new conversation
       
       // Also clear any pending canvas timers to prevent old snapshots
-      document.querySelectorAll('#codemirror > div > div.cm-scroller > div').forEach(element => {
+      document.querySelectorAll(S.canvas.content).forEach(element => {
         if (element._snapshotTimer) {
           clearTimeout(element._snapshotTimer);
           element._snapshotTimer = null;
@@ -1053,23 +1051,19 @@ function init() {
 
   // Function to update the conversation
   function queryAndUpdateConversationsGradio() {
-    queryAndUpdateConversations("[data-testid=\"user\"]", "[data-testid=\"bot\"]", sub_user_selector="",sub_bot_selector="", model="gradio");
+    queryAndUpdateConversations(P.gradio.user_msg, P.gradio.bot_msg, sub_user_selector="",sub_bot_selector="", model="gradio");
   }
 
   function queryAndUpdateConversationsChatUI() {
-    const org_chat_ui_user_selector = "[class=\"max-w-full whitespace-break-spaces break-words rounded-2xl px-5 py-3.5 text-gray-500 dark:text-gray-400\"]";
-    waitForElms(org_chat_ui_user_selector).then((elements_found) => {
+    waitForElms(P.chatui.user_msg).then((elements_found) => {
       if (!elements_found || elements_found.length === 0) {
         console.log("Couldn't find the user messages. Trying the new selector")
-        // try the new selector
-        // queryAndUpdateConversations('.scrollbar-custom.mr-1.h-full.overflow-y-auto .text-gray-500',
-        //     '.scrollbar-custom.mr-1.h-full.overflow-y-auto .text-gray-600');
-      queryAndUpdateConversations("[class=\"disabled w-full appearance-none whitespace-break-spaces text-wrap break-words bg-inherit px-5 py-3.5 text-gray-500 dark:text-gray-400\"]",
-          "[class=\"prose max-w-none dark:prose-invert max-sm:prose-sm prose-headings:font-semibold prose-h1:text-lg prose-h2:text-base prose-h3:text-base prose-pre:bg-gray-800 dark:prose-pre:bg-gray-900\"]", 
+      queryAndUpdateConversations(P.chatui.user_msg_fallback,
+          P.chatui.bot_msg,
           sub_user_selector="",sub_bot_selector="", model="chatui");
       } else {
-        queryAndUpdateConversations(org_chat_ui_user_selector,
-            "[class=\"prose max-w-none dark:prose-invert max-sm:prose-sm prose-headings:font-semibold prose-h1:text-lg prose-h2:text-base prose-h3:text-base prose-pre:bg-gray-800 dark:prose-pre:bg-gray-900\"]",
+        queryAndUpdateConversations(P.chatui.user_msg,
+            P.chatui.bot_msg,
             sub_user_selector="",sub_bot_selector="", model="chatui");
       }
     });
@@ -1077,59 +1071,28 @@ function init() {
 
   function queryAndUpdateConversationsOpenAI() {
     queryAndUpdateConversations(
-        "[data-message-author-role=\"user\"]",
-        "[data-message-author-role=\"assistant\"]", sub_user_selector="",sub_bot_selector="", model="chatgpt");//,
+        P.chatgpt.user_msg,
+        P.chatgpt.bot_msg, sub_user_selector="",sub_bot_selector="", model="chatgpt");
   }
 
   function queryAndUpdateConversationsClaudeAI() {
-    // div.grid-cols-1.grid.gap-2\\.5.\\[\\&_>_\\*\\]\\:min-w-0
-    // .font-claude-response.relative
-    // grid-cols-1.grid.gap-2
-    // .grid-cols-1.grid.gap-2.5
-    queryAndUpdateConversations("[data-testid=\"user-message\"]",
-        ".grid-cols-1.grid.gap-2\\.5", sub_user_selector="",sub_bot_selector="", model="claude");//,
+    queryAndUpdateConversations(P.claude.user_msg,
+        P.claude.bot_msg, sub_user_selector="",sub_bot_selector="", model="claude");
   }
 
   function queryAndUpdateConversationsGrok() {
-    //user : class= "relative group flex flex-col justify-center w-full max-w-[var(--content-max-width)] pb-0.5 items-end"
-    //bot : class="message-bubble rounded-3xl text-primary min-h-7 prose dark:prose-invert break-words prose-p:opacity-100 prose-strong:opacity-100 prose-li:opacity-100 prose-ul:opacity-100 prose-ol:opacity-100 prose-ul:my-1 prose-ol:my-1 prose-li:my-2 last:prose-li:mb-3 prose-li:ps-1 prose-li:ms-1 w-full max-w-none"
-    //sub_bots : 
-    // -- class="response-content-markdown markdown [&_a:not(.not-prose)]:text-current [&_a:not(.not-prose):hover]:text-primary [&_a:not(.not-prose):hover]:decoration-primary [&_a:not(.not-prose)]:underline [&_a:not(.not-prose)]:decoration-primary/30 [&_a:not(.not-prose)]:underline-offset-2 [&_h2:not(.not-prose):first-child]:mt-0 [&_h3:not(.not-prose):first-child]:mt-0 [&_h4:not(.not-prose):first-child]:mt-0"
-    // -- class="response-content-markdown markdown [&_a:not(.not-prose)]:text-current [&_a:not(.not-prose):hover]:text-primary [&_a:not(.not-prose):hover]:decoration-primary [&_a:not(.not-prose)]:underline [&_a:not(.not-prose)]:decoration-primary/30 [&_a:not(.not-prose)]:underline-offset-2"
-    // -- class="relative not-prose @container/code-block [&_div+div]:!mt-0 mt-3 mb-3 @md:-mx-4 @md:-mr-4"
-    // -- class="flex cursor-pointer rounded-2xl border border-border-l1 bg-surface-l2 hover:bg-surface-l4-hover dark:hover:bg-surface-l3"
-    sub_bot_selector = [
-      "[class=\"response-content-markdown markdown [&_a:not(.not-prose)]:text-current [&_a:not(.not-prose):hover]:text-primary [&_a:not(.not-prose):hover]:decoration-primary [&_a:not(.not-prose)]:underline [&_a:not(.not-prose)]:decoration-primary/30 [&_a:not(.not-prose)]:underline-offset-2 [&_h2:not(.not-prose):first-child]:mt-0 [&_h3:not(.not-prose):first-child]:mt-0 [&_h4:not(.not-prose):first-child]:mt-0\"]",
-      "[class=\"response-content-markdown markdown [&_a:not(.not-prose)]:text-current [&_a:not(.not-prose):hover]:text-primary [&_a:not(.not-prose):hover]:decoration-primary [&_a:not(.not-prose)]:underline [&_a:not(.not-prose)]:decoration-primary/30 [&_a:not(.not-prose)]:underline-offset-2\"]",
-      "[class=\"relative not-prose @container/code-block [&_div+div]:!mt-0 mt-3 mb-3 @md:-mx-4 @md:-mr-4\"]",
-      "[class=\"flex cursor-pointer rounded-2xl border border-border-l1 bg-surface-l2 hover:bg-surface-l4-hover dark:hover:bg-surface-l3\"]",
-      "[class=\"relative response-content-markdown markdown [&_a:not(.not-prose)]:text-current [&_a:not(.not-prose):hover]:text-primary [&_a:not(.not-prose):hover]:decoration-primary [&_a:not(.not-prose)]:underline [&_a:not(.not-prose)]:decoration-primary/30 [&_a:not(.not-prose)]:underline-offset-2 [&_h2:not(.not-prose):first-child]:mt-0 [&_h3:not(.not-prose):first-child]:mt-0 [&_h4:not(.not-prose):first-child]:mt-0\"]",
-      "[class=\"relative response-content-markdown markdown [&_a:not(.not-prose)]:text-current [&_a:not(.not-prose):hover]:text-primary [&_a:not(.not-prose):hover]:decoration-primary [&_a:not(.not-prose)]:underline [&_a:not(.not-prose)]:decoration-primary/30 [&_a:not(.not-prose)]:underline-offset-2\"]"
-    ]
-    //filters :
-    // -- class="flex flex-row px-4 py-2 h-10 items-center rounded-t-xl bg-surface-l2 border border-border-l1"
-    // -- class="sticky w-full right-2 z-10 @[1280px]/mainview:z-40 @[1280px]/mainview:top-10 top-24 @[0px]/preview:top-5 print:hidden"
-    // -- class="katex-html"
-    // -- class="katex-mathml -> <math> -> <semantic> -> <mrow>"
-    sub_bot_filters = [
-      "[class=\"flex flex-row px-4 py-2 h-10 items-center rounded-t-xl bg-surface-l2 border border-border-l1\"]",
-      "[class=\"sticky w-full right-2 z-10 @[1280px]/mainview:z-40 @[1280px]/mainview:top-10 top-24 @[0px]/preview:top-5 print:hidden\"]",
-      "[class=\"katex-html\"]",
-      "[class=\"katex-mathml\"] > math > semantic > mrow",
-      "mrow"
-    ]
-    const sub_bot_filter_combined = sub_bot_filters.join(",");
-    const sub_bot_selector_combined = sub_bot_selector.join(",");
+    const sub_bot_selector_combined = P.grok.sub_bot_selectors.join(",");
+    const sub_bot_filter_combined = P.grok.sub_bot_filters.join(",");
     if (!shouldShare || !age_verified) {
       console.log("Sharing is disables, not updating conversation");
       return;
     }
-    waitForElms("[class=\"relative group flex flex-col justify-center w-full max-w-[var(--content-max-width)] pb-0.5 items-end\"]").then(async (user) => {
+    waitForElms(P.grok.user_msg).then(async (user) => {
       const new_user_msgs = [];
       for (let i = 0; i < user.length; i++) {
         new_user_msgs.push(user[i].textContent);
       }
-      const bot = await waitForElms("[class=\"message-bubble relative rounded-3xl text-primary min-h-7 prose dark:prose-invert break-words prose-p:opacity-100 prose-strong:opacity-100 prose-li:opacity-100 prose-ul:opacity-100 prose-ol:opacity-100 prose-ul:my-1 prose-ol:my-1 prose-li:my-2 last:prose-li:mb-3 prose-li:ps-1 prose-li:ms-1 w-full max-w-none\"]");
+      const bot = await waitForElms(P.grok.bot_msg);
       console.log("bot messages found", bot);
       const new_bot_msgs = [];
       for (let i = 0; i < bot.length; i++) {
@@ -1171,39 +1134,39 @@ function init() {
 
   function queryAndUpdateConversationsGemini() {
     queryAndUpdateConversations(
-        "div.query-text",
-        "div.markdown-main-panel", sub_user_selector="",sub_bot_selector="", model="gemini"
+        P.gemini.user_msg,
+        P.gemini.bot_msg, sub_user_selector="",sub_bot_selector="", model="gemini"
     );
   }
 
   function queryAndUpdateConversationsMistral() {
     queryAndUpdateConversations(
-        '[data-message-author-role="user"] .select-text',
-        '[data-message-author-role="assistant"] [data-message-part-type="answer"]',
+        P.mistral.user_msg,
+        P.mistral.bot_msg,
         sub_user_selector="",sub_bot_selector="", model="mistral"
     );
   }
 
   function queryAndUpdateConversationsPoe() {
     queryAndUpdateConversations(
-        ".Prose_presets_theme-on-accent__rESxX",
-        ".Prose_presets_theme-hi-contrast__LQyM9",
+        P.poe.user_msg,
+        P.poe.bot_msg,
         sub_user_selector="",sub_bot_selector="", model="poe"
     );
   }
 
   function queryAndUpdateConversationsPerplexity() {
     queryAndUpdateConversations(
-        ".font-display.text-pretty",
-        "div.prose",
+        P.perplexity.user_msg,
+        P.perplexity.bot_msg,
         sub_user_selector="",sub_bot_selector="", model="perplexity"
     );
   }
   
   function queryAndUpdateConversationsCohere() {
     queryAndUpdateConversations(
-        "[data-source-file=\"MessageContent.tsx\"] textarea",
-        "[data-source-file=\"Markdown.tsx\"]"
+        P.cohere.user_msg,
+        P.cohere.bot_msg
     );
   }
   
@@ -1266,7 +1229,7 @@ function init() {
             // console.log("choosing Chatgpt loop ", i)
             // console.log(bot[i]);
             
-            const [text_content, href_of_text] = getBotLinkFromMessageChatGPT(bot[i], 'span.max-w-full.grow.truncate.overflow-hidden.text-center');
+            const [text_content, href_of_text] = getBotLinkFromMessageChatGPT(bot[i], P.chatgpt.link_selector);
             let botTextContent = bot[i].textContent;
             let next_index = 0;
             console.log(botTextContent)
@@ -1291,7 +1254,7 @@ function init() {
             // Handle other models
             // currently default functionality
             console.log("Claude testing")
-            const [text_content, href_of_text] = getBotLinkFromMessageChatGPT(bot[i], "span.text-nowrap.text-text-300.break-all.truncate.font-normal.group-hover\\/tag\\:text-text-200");
+            const [text_content, href_of_text] = getBotLinkFromMessageChatGPT(bot[i], P.claude.link_selector);
             let botTextContent = bot[i].textContent;
             let next_index = 0;
             if (href_of_text.length > 0) {
@@ -1345,14 +1308,14 @@ function init() {
           change.addedNodes.forEach((node) => {
             if (node.nodeType === Node.ELEMENT_NODE) {
               // Look for canvas content using the specific selector
-              const canvasContent = node.querySelectorAll('#codemirror > div > div.cm-scroller > div');
-              if (canvasContent.length > 0 || node.matches('#codemirror > div > div.cm-scroller > div')) {
+              const canvasContent = node.querySelectorAll(S.canvas.content);
+              if (canvasContent.length > 0 || node.matches(S.canvas.content)) {
                 setTimeout(() => attachCanvasWatchers(), 800);
               }
-              
+
               // Check for codemirror container
-              const editorContainer = node.querySelectorAll('#codemirror');
-              if (editorContainer.length > 0 || node.matches('#codemirror')) {
+              const editorContainer = node.querySelectorAll(S.canvas.container);
+              if (editorContainer.length > 0 || node.matches(S.canvas.container)) {
                 setTimeout(() => attachCanvasWatchers(), 1200);
               }
             }
@@ -1371,7 +1334,7 @@ function init() {
   }
 
   function attachCanvasWatchers() {
-    const canvasContentElements = document.querySelectorAll('#codemirror > div > div.cm-scroller > div');
+    const canvasContentElements = document.querySelectorAll(S.canvas.content);
     
     if (canvasContentElements.length === 0) {
       console.log("No canvas elements found");
@@ -1535,7 +1498,7 @@ function init() {
     const text = element.textContent || '';
     
     // Try to find title from parent elements first
-    const editorRoot = element.closest('#codemirror');
+    const editorRoot = element.closest(S.canvas.container);
     if (editorRoot) {
       const container = editorRoot.parentElement;
       if (container) {
@@ -1612,9 +1575,9 @@ function init() {
 
 
 function queryAndUpdateRating(n_messages) {
-  const parent_selector = 'div.absolute.-bottom-4.right-0';
-  const positive_selector = "[title=\"Remove +1\"]";
-  const negative_selector = "[title=\"Remove -1\"]";
+  const parent_selector = SHARELM_SELECTORS.rating.parent;
+  const positive_selector = SHARELM_SELECTORS.rating.positive;
+  const negative_selector = SHARELM_SELECTORS.rating.negative;
   const new_ratings = Array(n_messages).fill(0);
 
   // find all rating elements :+1: and :-1: and store the ratings

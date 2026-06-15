@@ -28,6 +28,7 @@ import re
 import select
 import sys
 import threading
+import time
 from pathlib import Path
 
 import json5
@@ -250,7 +251,8 @@ def test_platform(playwright, key: str, cfg: dict) -> dict:
                     result["notes"].append(status)
 
         if not skip_flag.skipped:
-            # Check message selectors (WARN instead of FAIL — messages need an open conversation)
+            # Check message selectors
+            warn_types = []
             for msg_type in ("user_msg", "bot_msg"):
                 selector = cfg[msg_type]
                 status, count = check_selector(page, selector, MESSAGE_TIMEOUT)
@@ -258,9 +260,35 @@ def test_platform(playwright, key: str, cfg: dict) -> dict:
                     result[msg_type] = f"PASS({count})"
                 elif status == "FAIL":
                     result[msg_type] = "WARN"
+                    warn_types.append(msg_type)
                 else:
                     result[msg_type] = "ERROR"
                     result["notes"].append(f"{msg_type}: {status}")
+
+            # If any message selectors didn't match, ask the user to open
+            # a conversation and re-check.
+            if warn_types and not skip_flag.skipped and sys.stdin.isatty():
+                print(
+                    f"  {cfg['name']}: message selectors not found — "
+                    f"open a conversation in the browser, then press Enter...",
+                    flush=True,
+                )
+                # Wait for user to press Enter (reuses the existing skip thread)
+                start = time.time()
+                while not skip_flag.skipped and (time.time() - start) < 120:
+                    time.sleep(0.5)
+
+                if skip_flag.skipped:
+                    for msg_type in warn_types:
+                        selector = cfg[msg_type]
+                        status, count = check_selector(page, selector, MESSAGE_TIMEOUT)
+                        if status == "PASS":
+                            result[msg_type] = f"PASS({count})"
+                        elif status == "FAIL":
+                            result[msg_type] = "FAIL"
+                        else:
+                            result[msg_type] = "ERROR"
+                            result["notes"].append(f"{msg_type}: {status}")
 
         # Save screenshot
         SCREENSHOTS_DIR.mkdir(parents=True, exist_ok=True)
