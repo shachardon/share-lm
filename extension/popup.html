@@ -247,6 +247,131 @@
       margin: 5px 0;
     }
 
+    .privacy-card {
+      margin-top: 14px;
+      background-color: white;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      padding: 12px;
+    }
+
+    .privacy-card h3 {
+      margin-top: 0;
+    }
+
+    .privacy-grid {
+      display: grid;
+      gap: 8px;
+    }
+
+    .privacy-grid label {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      font-size: 0.85rem;
+    }
+
+    #regex-rules-text {
+      width: 100%;
+      min-height: 120px;
+      resize: vertical;
+      font-family: monospace;
+      font-size: 0.75rem;
+      box-sizing: border-box;
+    }
+
+    #privacy-save-status {
+      margin-top: 8px;
+      font-size: 0.8rem;
+      text-align: left;
+    }
+
+    .status-success {
+      color: #14532d;
+    }
+
+    .status-error {
+      color: #991b1b;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: bold;
+    }
+
+    .status-needs_review {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .status-approved {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .status-blocked {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    .status-shared {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .icon-button {
+      display: block;
+      margin: 4px auto;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    .button-active-green {
+      background: rgba(34, 197, 94, 0.2);
+      border-radius: 8px;
+    }
+
+    .button-active-red {
+      background: rgba(239, 68, 68, 0.2);
+      border-radius: 8px;
+    }
+
+    .mini-action-button {
+      display: block;
+      width: 100%;
+      margin-bottom: 6px;
+      font-size: 0.75rem;
+      border-radius: 0.4rem;
+      border: 1px solid #cbd5e1;
+      background: white;
+      cursor: pointer;
+      padding: 4px 6px;
+    }
+
+    .mini-action-button:hover {
+      background: #eff6ff;
+    }
+
+    .danger-action:hover {
+      background: #fee2e2;
+    }
+
+    .conversation-meta {
+      margin-top: 6px;
+      font-size: 0.72rem;
+      color: #475569;
+    }
+
+    .read-more-link {
+      display: block;
+      margin-top: 6px;
+    }
 
   </style>
 </head>
@@ -317,20 +442,35 @@
     <thead>
     <tr>
       <th>Conversations</th>
+      <th>Status</th>
       <th>Rate</th>
-      <th>Remove?</th> <!-- Add a new column for actions -->
+      <th>Actions</th>
     </tr>
     </thead>
     <tbody></tbody>
   </table>
   <div class="button-container">
-    <p>Your data is *YOURS*. Click here to download your locally stored conversations (the ones in the table) as a CSV file</p>
-    <button id="downloadButton" class="disable-sharing-button" type="submit" name="download">Download</button>
+    <p>Your data is yours. Download the full local archive, including review state and Canvas captures, as JSON.</p>
+    <button id="downloadButton" class="disable-sharing-button" type="button" name="download">Download JSON Backup</button>
   </div>
   <div class="button-container">
-    <p>We are publishing the conversations to the DB with a delay. You can publish now to empty the local storage</p>
-    <button id="publishButton" class="disable-sharing-button" type="submit" name="publish">Publish Now</button>
+    <p>Only conversations marked Approved are published. Shared conversations stay in the local archive for later review.</p>
+    <button id="publishButton" class="disable-sharing-button" type="button" name="publish">Publish Approved</button>
   </div>
+</div>
+
+<div id="privacy-controls" class="privacy-card">
+  <h3>Privacy &amp; Review Controls</h3>
+  <p>Use advanced mode to keep conversations local first, redact obvious identifiers, and publish only after review.</p>
+  <form id="privacy-settings-form" class="privacy-grid">
+    <label><input id="require-manual-review" type="checkbox"> Require manual approval before publishing</label>
+    <label><input id="enable-redaction" type="checkbox"> Apply regex redaction rules before upload</label>
+    <label><input id="unlink-shared-ids" type="checkbox"> Use per-conversation public IDs instead of one stable public ID</label>
+    <label for="regex-rules-text">Regex redaction rules</label>
+    <textarea id="regex-rules-text" class="custom-input" spellcheck="false"></textarea>
+    <button id="privacy-save-button" class="disable-sharing-button" type="submit">Save Privacy Settings</button>
+    <div id="privacy-save-status" class="hidden"></div>
+  </form>
 </div>
 
 <!--<div id="message"></div>-->
