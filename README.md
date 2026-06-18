@@ -40,6 +40,37 @@ You will see the green banner (and green icon) as long as you are in a supported
 
 The plugin supports ChatGPT, Claude, Gemini, Poe, all Gradio/ChatUI LLM demos and the others mentioned in the [list](Supported_models_and_websites.txt) -- so go try your favorite one! 🤗
 
+## Building the Extension
+
+To build the extension from source for a specific browser, you will need to have [Node.js](https://nodejs.org/) and [npm](https://www.npmjs.com/) installed.
+
+### 1. Install Dependencies
+
+From the root of the repository, run:
+```bash
+npm install
+```
+
+### 2. Build for Your Browser
+
+**For Chrome:**
+```bash
+npm run build:chrome
+```
+
+**For Firefox:**
+```bash
+npm run build:firefox
+```
+These scripts configure the extension's `manifest.json` file for the target browser.
+
+### 3. Load the Extension
+
+After building, load the extension from the `extension/` directory.
+
+*   **Chrome:** Go to `chrome://extensions/`, enable "Developer mode", and click "Load unpacked" to select the `extension` directory.
+*   **Firefox:** Go to `about:debugging`, click "This Firefox", and click "Load Temporary Add-on" to select the `extension/manifest.json` file.
+
 ## What is unique about ShareLM?
 
 - Supports models from different demos and platforms.
